@@ -1,19 +1,25 @@
 package repo
 
 import (
+	"context"
 	"errors"
+	"net/http"
 	"sync"
+
+	"github.com/davidjspooner/go-fs/pkg/storage"
 )
 
 var ErrInvalidRepoType = errors.New("invalid proxy type")
 var ErrInvalidRepoConfig = errors.New("invalid proxy config")
 
 type Instance interface {
+	AddHandlersToMux(mux *http.ServeMux) error
+	SetStorage(storage storage.ReadOnlyFS) error
 }
 
 type Factory interface {
 	// Create creates a new proxy instance
-	NewRepo(config map[string]string) (Instance, error)
+	NewRepo(ctx context.Context, config map[string]string) (Instance, error)
 }
 
 var factories = make(map[string]Factory)
@@ -28,14 +34,14 @@ func MustRegisterFactory(typeName string, factory Factory) {
 	factories[typeName] = factory
 }
 
-func NewRepositoryFactory(typeName string, config map[string]string) (Instance, error) {
+func NewRepositoryFactory(ctx context.Context, typeName string, config map[string]string) (Instance, error) {
 	factoryLock.RLock()
 	defer factoryLock.RUnlock()
 	factory, ok := factories[typeName]
 	if !ok {
 		return nil, ErrInvalidRepoType
 	}
-	repo, err := factory.NewRepo(config)
+	repo, err := factory.NewRepo(ctx, config)
 	if err != nil {
 		return nil, err
 	}

@@ -1,8 +1,14 @@
 package general
 
-import "github.com/davidjspooner/repoxy/pkg/repo"
+import (
+	"context"
+	"net/http"
+
+	"github.com/davidjspooner/repoxy/pkg/repo"
+)
 
 type factory struct {
+	muxOnetimeDone bool
 }
 
 func init() {
@@ -11,6 +17,13 @@ func init() {
 
 var _ repo.Factory = (*factory)(nil)
 
-func (f *factory) NewRepo(config map[string]string) (repo.Instance, error) {
+func (f *factory) NewRepo(ctx context.Context, config map[string]string) (repo.Instance, error) {
 	return &generalInstance{}, nil
+}
+
+func (f *factory) addHandlersOnce(mux *http.ServeMux, instance *generalInstance) error {
+	if !f.muxOnetimeDone {
+		f.muxOnetimeDone = true
+	}
+	return nil
 }

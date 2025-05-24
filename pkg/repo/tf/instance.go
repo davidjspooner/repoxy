@@ -1,4 +1,4 @@
-package general
+package tf
 
 import (
 	"fmt"
@@ -8,24 +8,25 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-type generalInstance struct {
+type tfInstance struct {
+	tofu    bool
 	factory *factory
 }
 
-var _ repo.Instance = (*generalInstance)(nil)
+var _ repo.Instance = (*tfInstance)(nil)
 
-func (d *generalInstance) AddHandlersToMux(mux *http.ServeMux) error {
+func (d *tfInstance) AddHandlersToMux(mux *http.ServeMux) error {
 	d.factory.addHandlersOnce(mux, d)
 	return nil
 }
 
-func (d *generalInstance) Handle(w http.ResponseWriter, r *http.Request) {
+func (d *tfInstance) Handle(w http.ResponseWriter, r *http.Request) {
 	// Handle the request here
 	// For example, you can write a simple response
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("General instance handler"))
+	w.Write([]byte("TF instance handler"))
 }
 
-func (d *generalInstance) SetStorage(fs storage.ReadOnlyFS) error {
+func (d *tfInstance) SetStorage(fs storage.ReadOnlyFS) error {
 	return fmt.Errorf("SetStorage not implemented")
 }
