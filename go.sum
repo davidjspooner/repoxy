@@ -1,10 +1,8 @@
-github.com/davidjspooner/go-fs v0.0.0-20250525045705-ae7226e64124 h1:DDjMb0HrrSm7nidMGXE0xrW5pVLGrSZwzdDNs6S+PkI=
-github.com/davidjspooner/go-fs v0.0.0-20250525045705-ae7226e64124/go.mod h1:evyh45SKfIO1FvmoKtp33a8pXkS6wBd1frOp3yJOh5Y=
-github.com/davidjspooner/go-http-server v0.0.0-20250601200627-dda0bef375ea h1:qb6LkwSiTTWvoTdE4PK7kJmRy2k/6PgQ3NxFC0m7sGo=
-github.com/davidjspooner/go-http-server v0.0.0-20250601200627-dda0bef375ea/go.mod h1:qO1HQmjif8E6GEXRAgBgBTA6p1XT6JDzUv1FTGkQBNw=
+github.com/davidjspooner/go-fs v0.0.0-20250607062409-fcd26bb441f6 h1:bacX+Pn0oj+RA2BZ9AGhBoq8XPII12Q3XJhXmT3CHJ4=
+github.com/davidjspooner/go-fs v0.0.0-20250607062409-fcd26bb441f6/go.mod h1:evyh45SKfIO1FvmoKtp33a8pXkS6wBd1frOp3yJOh5Y=
+github.com/davidjspooner/go-http-server v0.0.0-20250607062158-4b10b49ec7b4 h1:qq4n8OiKGxIpFJ7sGZ1Q3Ni28KqsV+1JSJeFNvkZ2KA=
+github.com/davidjspooner/go-http-server v0.0.0-20250607062158-4b10b49ec7b4/go.mod h1:PB+8vU05QulnzGTUOZ9VLWDrhN3yC3iGLsoYQAlzsvI=
 github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8 h1:ycfMXisrY8FFOOLzLbU+L2bLFdJDuVKLnI60N84H4YI=
 github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8/go.mod h1:k2wsTCgmup/Ai0d7c8hZYwQvxFaLQnbfCsRfyq3Vjzk=
-github.com/davidjspooner/go-text-cli v0.0.0-20250601210900-5a04762b687b h1:2eHIw1prVB9uTPhhRTZ8s4uWyago3WwzgL2x0+NYiCY=
-github.com/davidjspooner/go-text-cli v0.0.0-20250601210900-5a04762b687b/go.mod h1:LuXSCWfIap/2bqTBBQckgSIYyTnyohp3jFHW+UrQSZU=
-github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
-github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/davidjspooner/go-text-cli v0.0.0-20250607061328-14a849471a9b h1:9CsCufdZPRMDiGn0s5Hu2Ho71c5WSRhfrtI3byoilsU=
+github.com/davidjspooner/go-text-cli v0.0.0-20250607061328-14a849471a9b/go.mod h1:LuXSCWfIap/2bqTBBQckgSIYyTnyohp3jFHW+UrQSZU=
