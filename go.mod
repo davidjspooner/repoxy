@@ -1,18 +1,14 @@
 module github.com/davidjspooner/repoxy
 
-go 1.23.0
-
-toolchain go1.24.2
-
-require github.com/prometheus/client_golang v1.22.0
+go 1.24.2
 
 require (
-	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.64.0 // indirect
-	github.com/prometheus/procfs v0.16.1 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	github.com/davidjspooner/go-fs v0.0.0-20250525045705-ae7226e64124
+	github.com/davidjspooner/go-http-server v0.0.0-20250601200627-dda0bef375ea
+	github.com/davidjspooner/go-text-cli v0.0.0-20250601210900-5a04762b687b
+)
+
+require (
+	github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 )

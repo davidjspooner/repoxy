@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/davidjspooner/repoxy/internal/config"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
@@ -18,7 +19,7 @@ func init() {
 
 var _ repo.Factory = (*factory)(nil)
 
-func (f *factory) NewRepo(ctx context.Context, config map[string]string) (repo.Instance, error) {
+func (f *factory) NewRepo(ctx context.Context, config config.Repo) (repo.Instance, error) {
 	return &dockerInstance{}, nil
 }
 

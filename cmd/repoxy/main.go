@@ -1,13 +1,41 @@
 package main
 
 import (
-    "net/http"
-    "log"
-    "github.com/prometheus/client_golang/prometheus/promhttp"
+	"context"
+	"log/slog"
+	"os"
+
+	"github.com/davidjspooner/go-text-cli/pkg/cmd"
 )
 
+type GlobalOptions struct {
+	cmd.LogOptions
+}
+
 func main() {
-    http.Handle("/metrics", promhttp.Handler())
-    log.Println("Starting Repoxy on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+	root := cmd.NewCommand("", "A Repository Proxy ",
+		func(ctx context.Context, options *GlobalOptions, args []string) error {
+			err := options.LogOptions.SetupSLOG()
+			if err != nil {
+				return err
+			}
+			err = cmd.ShowHelpForMissingSubcommand(ctx)
+			return err
+		}, &GlobalOptions{LogOptions: cmd.LogOptions{Level: "info"}})
+
+	cmd.RootCommand = root
+	versionCommand := cmd.VersionCommand()
+
+	subcommands := cmd.RootCommand.SubCommands()
+	subcommands.MustAdd(
+		versionCommand,
+		serveCommand,
+	)
+
+	ctx := context.Background()
+	err := cmd.Run(ctx, os.Args[1:])
+	if err != nil {
+		slog.ErrorContext(ctx, err.Error())
+		os.Exit(1)
+	}
 }
