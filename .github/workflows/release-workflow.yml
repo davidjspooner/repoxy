@@ -55,6 +55,12 @@ jobs:
         run: |
           echo "Building binaries"
           ./build.sh 
+    
+      - name: save artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: repoxy-artifacts
+          path: dist/repoxy-*64
 
       - name: Compress binaries
         run: |
@@ -90,3 +96,14 @@ jobs:
             dist/*           
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push Docker image
+        run: |
+          echo "Building and pushing Docker image"
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag davidjspooner/repoxy:${BUILD_VERSION} \
+            .
