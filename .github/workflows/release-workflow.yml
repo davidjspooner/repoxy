@@ -110,7 +110,7 @@ jobs:
       - name: Build and push Docker image
         run: |
           echo "Building and pushing Docker image"
-          IMAGE_VERSION="${version#v}"
+          IMAGE_VERSION="${BUILD_VERSION#v}"
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/repoxy:${IMAGE_VERSION}
           echo "Building image name: ${IMAGE_NAME}"
           docker build --tag ${IMAGE_NAME} .
