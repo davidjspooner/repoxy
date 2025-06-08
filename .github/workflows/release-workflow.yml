@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release-workflow:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]' && github.ref == 'refs/heads/main'
+    permissions:
+          contents: write  # Required for git push
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          # Fetch all history for so that git rev-list can find the last tag
+          # This is needed for the git-update-tag command to work correctly
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: Configure Git for private module access
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.RO_DAVIDJSPOONER }}@github.com/davidjspooner/".insteadOf "https://github.com/davidjspooner/"
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}".insteadOf "https://github.com/${GITHUB_REPOSITORY}"
+          echo "GOPRIVATE=github.com/davidjspooner" >> $GITHUB_ENV
+
+      - name: Install ci-utility
+        uses: davidjspooner/ci-utility@v0.4.2
+        with:
+          version: "latest"
+
+      - name: Increment tag if needed (main branch only)
+        run: |
+          echo "Incrementing tag if needed"
+          ci-utility git update-tag --prefix=v --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get build environment
+        id: build-env
+        run: |
+          echo "Generating build environment"
+          ci-utility git suggest-build-env | tee -a $GITHUB_ENV
+
+      - name: Build binaries
+        run: |
+          echo "Building binaries"
+          ./build.sh 
+
+      - name: Check Files
+        run: |
+          echo "Listing all files"
+          ls -lR 
+
+      - name: Compress binaries
+        run: |
+          echo "Compressing binaries"
+          set | grep BUILD
+          ci-utility archive compress \
+            --remove-original \
+            --rename ansi-text \
+            --format zip \
+            dist/ansi-text-*64
+
+      - name: Checksum
+        run: |
+          echo "Calculating checksum"
+          ci-utility archive checksum \
+            --combined-file dist/checksums.txt \
+            --algorithm sha256 \
+            dist/ansi-text-*64.zip
+
+      - name: List distribution files
+        run: |
+          echo "Listing distribution files"
+          ls -l dist/
+
+      - name: Create draft release
+        run: |
+          echo "Creating draft release"
+          ci-utility github release create\
+            --tag ${BUILD_VERSION} \
+            --draft \
+            --body "#TODO create release notes" \
+            --verbose \
+            dist/*           
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
