@@ -56,11 +56,11 @@ jobs:
           echo "Building binaries"
           ./build.sh 
     
-      - name: save artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: repoxy-artifacts
-          path: dist/repoxy-*64
+      #- name: save artifacts
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: repoxy-artifacts
+      #    path: dist/repoxy-*64
 
       - name: Compress binaries
         run: |
