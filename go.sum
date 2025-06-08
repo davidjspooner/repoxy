@@ -4,5 +4,5 @@ github.com/davidjspooner/go-http-server v0.0.0-20250607062158-4b10b49ec7b4 h1:qq
 github.com/davidjspooner/go-http-server v0.0.0-20250607062158-4b10b49ec7b4/go.mod h1:PB+8vU05QulnzGTUOZ9VLWDrhN3yC3iGLsoYQAlzsvI=
 github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8 h1:ycfMXisrY8FFOOLzLbU+L2bLFdJDuVKLnI60N84H4YI=
 github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8/go.mod h1:k2wsTCgmup/Ai0d7c8hZYwQvxFaLQnbfCsRfyq3Vjzk=
-github.com/davidjspooner/go-text-cli v0.0.0-20250607061328-14a849471a9b h1:9CsCufdZPRMDiGn0s5Hu2Ho71c5WSRhfrtI3byoilsU=
-github.com/davidjspooner/go-text-cli v0.0.0-20250607061328-14a849471a9b/go.mod h1:LuXSCWfIap/2bqTBBQckgSIYyTnyohp3jFHW+UrQSZU=
+github.com/davidjspooner/go-text-cli v0.0.2 h1:nNOEwGJGc/8r1TacAXlGCln0KprHYL/Lf2xAaOPlRP8=
+github.com/davidjspooner/go-text-cli v0.0.2/go.mod h1:LuXSCWfIap/2bqTBBQckgSIYyTnyohp3jFHW+UrQSZU=

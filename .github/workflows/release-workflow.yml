@@ -3,6 +3,10 @@ name: Release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write  # Required for git push
+  id-token: write  # Required for ci-utility github release create
+
 jobs:
   release-workflow:
     runs-on: ubuntu-latest
@@ -28,10 +32,12 @@ jobs:
           echo "GOPRIVATE=github.com/davidjspooner" >> $GITHUB_ENV
 
       - name: Install ci-utility
-        uses: davidjspooner/ci-utility@v0.4.2
+        uses: davidjspooner/ci-utility@HEAD
         with:
           version: "latest"
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
       - name: Increment tag if needed (main branch only)
         run: |
           echo "Incrementing tag if needed"
@@ -50,20 +56,15 @@ jobs:
           echo "Building binaries"
           ./build.sh 
 
-      - name: Check Files
-        run: |
-          echo "Listing all files"
-          ls -lR 
-
       - name: Compress binaries
         run: |
           echo "Compressing binaries"
           set | grep BUILD
           ci-utility archive compress \
             --remove-original \
-            --rename ansi-text \
+            --rename repoxy \
             --format zip \
-            dist/ansi-text-*64
+            dist/repoxy-*64
 
       - name: Checksum
         run: |
@@ -71,7 +72,7 @@ jobs:
           ci-utility archive checksum \
             --combined-file dist/checksums.txt \
             --algorithm sha256 \
-            dist/ansi-text-*64.zip
+            dist/repoxy-*64.zip
 
       - name: List distribution files
         run: |
