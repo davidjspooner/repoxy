@@ -67,7 +67,6 @@ jobs:
           echo "Compressing binaries"
           set | grep BUILD
           ci-utility archive compress \
-            --remove-original \
             --rename repoxy \
             --format zip \
             dist/repoxy-*64
