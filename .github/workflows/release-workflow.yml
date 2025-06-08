@@ -112,5 +112,6 @@ jobs:
           echo "Building and pushing Docker image"
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --tag davidjspooner/repoxy:${BUILD_VERSION} \
+            --push \
+            --tag ghcr.io/davidjspooner/repoxy:${BUILD_VERSION} \
             .
