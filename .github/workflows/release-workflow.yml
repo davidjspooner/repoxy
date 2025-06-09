@@ -112,10 +112,14 @@ jobs:
           echo "Building and pushing Docker image"
           IMAGE_VERSION="${BUILD_VERSION#v}"
           IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/repoxy
-          echo "Building image name: ${IMAGE_NAME}"
+          echo "Building image name: ${IMAGE_NAME}  label: ${IMAGE_VERSION}"
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --tag ${IMAGE_NAME}:${IMAGE_VERSION} \
           --tag ${IMAGE_NAME}:latest \
+          --label org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/repoxy \
+          --label org.opencontainers.image.description="Repoxy is a proxy server for various repositories" \
+          --label org.opencontainers.image.licenses=MIT \
+          --build-arg IMAGE_VERSION=${IMAGE_VERSION} \
           --push \
           .
