@@ -111,7 +111,11 @@ jobs:
         run: |
           echo "Building and pushing Docker image"
           IMAGE_VERSION="${BUILD_VERSION#v}"
-          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/repoxy:${IMAGE_VERSION}
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/repoxy
           echo "Building image name: ${IMAGE_NAME}"
-          docker build --tag ${IMAGE_NAME} .
-          docker push ${IMAGE_NAME}
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --tag ${IMAGE_NAME}:${IMAGE_VERSION} \
+          --tag ${IMAGE_NAME}:latest \
+          --push \
+          .
