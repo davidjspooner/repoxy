@@ -13,6 +13,7 @@ import (
 )
 
 type ServeOptions struct {
+	Config string `flag:"--config,Path to the configuration file"`
 }
 
 var serveCommand = cmd.NewCommand(
@@ -26,13 +27,14 @@ var serveCommand = cmd.NewCommand(
 
 		return nil
 	},
-	&ServeOptions{},
+	&ServeOptions{
+		Config: "config.yaml",
+	},
 )
 
 func loggerMiddleware() *middleware.Log {
 	return &middleware.Log{
 		AfterRequest: func(ctx context.Context, r *http.Request, observed *handler.Observation) {
-			statusType := observed.Response.Status / 100
 
 			attrs := []any{
 				slog.String("req_id", observed.Request.ID),
@@ -59,6 +61,8 @@ func loggerMiddleware() *middleware.Log {
 			if observed.RoutePattern != "" {
 				attrs = append(attrs, slog.String("route", observed.RoutePattern))
 			}
+
+			statusType := observed.Response.Status / 100
 			switch statusType {
 			case 1, 2: //1xx, 2xx
 				slog.InfoContext(ctx, "request completed", attrs...)

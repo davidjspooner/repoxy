@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/davidjspooner/go-http-client/pkg/client"
@@ -70,16 +71,16 @@ func (f *factory) lookupParam(r *http.Request) (*dockerInstance, *param) {
 
 // HandleV2Catalog handles requests to the Docker v2 catalog endpoint.
 func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
-	// Handle the request here
-	// For example, you can write a simple response
+	// TODO : Implement the logic to handle the request for the Docker v2 catalog
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle the request for the Docker v2 catalog")
 	w.WriteHeader(http.StatusNotImplemented)
 	w.Write([]byte("V2 Catalog handler"))
 }
 
 // HandleV2 handles requests to the Docker v2 API root endpoint.
 func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
-	// Handle the request here
-	// For example, you can write a simple response
+	// TODO : Implement the logic to handle the request for the Docker v2 API root
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle the request for the Docker v2 API root")
 	w.WriteHeader(http.StatusNotImplemented)
 	w.Write([]byte("V2 handler"))
 }

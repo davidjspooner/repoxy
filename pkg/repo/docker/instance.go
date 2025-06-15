@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/davidjspooner/go-http-client/pkg/client"
@@ -41,8 +42,9 @@ func (d *dockerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *ht
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
+	// TODO : Implement the logic to handle tags requests
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle tags requests")
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	w.Write([]byte("This repo is read-only, no write operations allowed"))
 }
 
 // HandleV2Manifest handles Docker V2 manifest requests. Returns a 405 for write operations.
@@ -50,8 +52,9 @@ func (d *dockerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
+	// TODO : Implement the logic to handle manifest requests
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle manifest requests")
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("V2 Manifest handler"))
 }
 
 // HandleV2BlobUpload handles Docker V2 blob upload requests. Returns a 405 for write operations.
@@ -59,8 +62,9 @@ func (d *dockerInstance) HandleV2BlobUpload(param *param, w http.ResponseWriter,
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
+	// TODO : Implement the logic to handle blob upload requests
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle blob upload requests")
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("V2 Blob Upload handler"))
 }
 
 // HandleV2BlobUID handles Docker V2 blob UID requests. Returns a 405 for write operations.
@@ -68,8 +72,9 @@ func (d *dockerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r 
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
+	// TODO : Implement the logic to handle blob UID requests
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle blob UID requests")
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("V2 Blob UID handler"))
 }
 
 // HandleV2BlobDigest handles Docker V2 blob digest requests. Returns a 405 for write operations.
@@ -77,12 +82,12 @@ func (d *dockerInstance) HandleV2BlobDigest(param *param, w http.ResponseWriter,
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
+	// TODO : Implement the logic to handle blob digest requests
+	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle blob digest requests")
 	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("V2 Blob Digest handler"))
 }
 
 func (d *dockerInstance) Authenticate(response *http.Response) string {
-	// TODO Implement authentication logic here
 	challenge := response.Header.Get("WWW-Authenticate")
 	if challenge == "" {
 		return ""
@@ -90,6 +95,7 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 	challenges := client.ParseWWWAuthenticate(challenge)
 	for _, challenge := range challenges {
 		//TODO
+		slog.DebugContext(response.Request.Context(), "TODO: Handle parsed WWW-Authenticate challenge")
 		_ = challenge
 	}
 	return ""

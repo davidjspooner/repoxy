@@ -2,6 +2,7 @@ package tf
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/davidjspooner/go-http-client/pkg/client"
@@ -48,10 +49,12 @@ func (f *factory) addHandlersOnce(mux *http.ServeMux) error {
 
 // HandleWellKnownTerraform handles requests to the .well-known/terraform.json endpoint.
 func (f *factory) HandleWellKnownTerraform(w http.ResponseWriter, r *http.Request) {
+	//TODO: implement the logic to handle the request for the .well-known/terraform.json
+	slog.DebugContext(r.Context(), "TODO: implement the logic to handle the request for the .well-known/terraform.json")
+
 	// 	{
 	// 	  "providers.v1": "https://registry.opentofu.org/v1/providers/",
 	// 	}
-	//TODO: implement this
 	w.WriteHeader(http.StatusNotImplemented)
 }
 

@@ -6,6 +6,9 @@ import (
 	"os"
 
 	"github.com/davidjspooner/go-text-cli/pkg/cmd"
+
+	_ "github.com/davidjspooner/repoxy/pkg/repo/docker"
+	_ "github.com/davidjspooner/repoxy/pkg/repo/tf"
 )
 
 type GlobalOptions struct {
