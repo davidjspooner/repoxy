@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/repoxy/internal/config"
 )
 
@@ -15,7 +14,6 @@ var ErrInvalidRepoConfig = errors.New("invalid proxy config")
 
 type Instance interface {
 	AddHandlersToMux(mux *http.ServeMux) error
-	SetStorage(storage storage.ReadOnlyFS) error
 }
 
 type Factory interface {
