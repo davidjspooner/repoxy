@@ -11,18 +11,13 @@ import (
 // dockerInstance implements the repo.Instance interface for Docker repositories.
 type dockerInstance struct {
 	factory  *factory
+	config   repo.Config
 	pipeline client.MiddlewarePipeline
 }
 
 // Ensure dockerInstance implements the repo.Instance , client.Authenticator, client.Cache interfaces.
 var _ repo.Instance = (*dockerInstance)(nil)
 var _ client.Authenticator = (*dockerInstance)(nil)
-
-// AddHandlersToMux adds HTTP handlers for the Docker instance to the provided mux.
-func (d *dockerInstance) AddHandlersToMux(mux *http.ServeMux) error {
-	d.factory.addHandlersOnce(mux)
-	return nil
-}
 
 // HandledWriteMethodForReadOnlyRepo checks if the request is a write operation and returns a 405 if so.
 // Returns true if the request was handled (i.e., is not allowed), false otherwise.
@@ -104,4 +99,8 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 func (d *dockerInstance) Client() client.Interface {
 	c := &http.Client{}
 	return d.pipeline.WrapClient(c)
+}
+
+func (d *dockerInstance) Config() repo.Config {
+	return d.config
 }

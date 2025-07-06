@@ -10,6 +10,7 @@ import (
 
 type tfInstance struct {
 	tofu     bool
+	config   repo.Config
 	factory  *factory
 	pipeline client.MiddlewarePipeline
 }
@@ -17,9 +18,8 @@ type tfInstance struct {
 var _ repo.Instance = (*tfInstance)(nil)
 var _ client.Authenticator = (*tfInstance)(nil)
 
-func (d *tfInstance) AddHandlersToMux(mux *http.ServeMux) error {
-	d.factory.addHandlersOnce(mux)
-	return nil
+func (d *tfInstance) Config() repo.Config {
+	return d.config
 }
 
 func (d *tfInstance) HandleV1VersionList(param *param, w http.ResponseWriter, r *http.Request) {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/davidjspooner/go-http-client/pkg/client"
-	"github.com/davidjspooner/repoxy/internal/config"
+	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
@@ -24,36 +24,33 @@ func init() {
 var _ repo.Factory = (*factory)(nil)
 
 // NewRepo creates a new Docker repository instance.
-func (f *factory) NewRepo(ctx context.Context, config config.Repo) (repo.Instance, error) {
+func (f *factory) NewRepo(ctx context.Context, config *repo.Config) (repo.Instance, error) {
 	instance := &dockerInstance{
 		factory: f,
+		config:  *config,
 	}
 	instance.pipeline = append(instance.pipeline, client.WithAuthentication(instance))
 	return instance, nil
 }
 
-// addHandlersOnce registers HTTP handlers for Docker endpoints on the mux.
-func (f *factory) addHandlersOnce(mux *http.ServeMux) error {
-	if !f.muxOnetimeDone {
-		f.muxOnetimeDone = true
-		// API Root
-		mux.HandleFunc("GET /v2/$", f.HandleV2)
+// AddToMux registers HTTP handlers for Docker endpoints on the mux.
+func (f *factory) AddToMux(mux *mux.ServeMux) error {
+	// API Root
+	mux.HandleFunc("GET /v2/", f.HandleV2)
 
-		// Catalog
-		mux.HandleFunc("GET /v2/_catalog$", f.HandleV2Catalog)
+	// Catalog
+	mux.HandleFunc("GET /v2/_catalog", f.HandleV2Catalog)
 
-		//tags
-		mux.HandleFunc("GET /v2/<name...>/tags/list$", f.HandleV2Tags)
+	//tags
+	mux.HandleFunc("GET /v2/{name...}/tags/list", f.HandleV2Tags)
 
-		//manifests
-		mux.HandleFunc("GET|PUT|DELETE /v2/<name...>/manifests/<tag>$", f.HandleV2Manifest) //note tag may also match manifest
+	//manifests
+	mux.HandleFunc("GET|PUT|DELETE /v2/{name...}/manifests/{tag}", f.HandleV2Manifest) //note tag may also match manifest
 
-		//blobs
-		mux.HandleFunc("POST /v2/<name...>/blobs/uploads/$", f.HandleV2BlobUpload)
-		mux.HandleFunc("PATCH|PUT|DELETE /v2/<name...>/blobs/uploads/<uuid>$", f.HandleV2BlobUID)
-		mux.HandleFunc("GET|HEAD|DELETE /v2/<name...>/blobs/<digest>$", f.HandleV2BlobDigest)
-
-	}
+	//blobs
+	mux.HandleFunc("POST /v2/{name...}/blobs/uploads/", f.HandleV2BlobUpload)
+	mux.HandleFunc("PATCH|PUT|DELETE /v2/{name...}/blobs/uploads/{uuid}", f.HandleV2BlobUID)
+	mux.HandleFunc("GET|HEAD|DELETE /v2/{name...}/blobs/{digest}", f.HandleV2BlobDigest)
 	return nil
 }
 
@@ -80,7 +77,6 @@ func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
 // HandleV2 handles requests to the Docker v2 API root endpoint.
 func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
 	// TODO : Implement the logic to handle the request for the Docker v2 API root
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle the request for the Docker v2 API root")
 	w.WriteHeader(http.StatusNotImplemented)
 	w.Write([]byte("V2 handler"))
 }
@@ -89,7 +85,7 @@ func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
 func (f *factory) HandleV2Tags(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
-		http.Error(w, "Repository not found", http.StatusNotFound)
+		f.HandleNotFound(w, r)
 		return
 	}
 	instance.HandleV2Tags(param, w, r)
@@ -99,7 +95,7 @@ func (f *factory) HandleV2Tags(w http.ResponseWriter, r *http.Request) {
 func (f *factory) HandleV2Manifest(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
-		http.Error(w, "Repository not found", http.StatusNotFound)
+		f.HandleNotFound(w, r)
 		return
 	}
 	instance.HandleV2Manifest(param, w, r)
@@ -109,7 +105,7 @@ func (f *factory) HandleV2Manifest(w http.ResponseWriter, r *http.Request) {
 func (f *factory) HandleV2BlobUpload(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
-		http.Error(w, "Repository not found", http.StatusNotFound)
+		f.HandleNotFound(w, r)
 		return
 	}
 	instance.HandleV2BlobUpload(param, w, r)
@@ -119,7 +115,7 @@ func (f *factory) HandleV2BlobUpload(w http.ResponseWriter, r *http.Request) {
 func (f *factory) HandleV2BlobUID(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
-		http.Error(w, "Repository not found", http.StatusNotFound)
+		f.HandleNotFound(w, r)
 		return
 	}
 	instance.HandleV2BlobUID(param, w, r)
@@ -129,8 +125,13 @@ func (f *factory) HandleV2BlobUID(w http.ResponseWriter, r *http.Request) {
 func (f *factory) HandleV2BlobDigest(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
-		http.Error(w, "Repository not found", http.StatusNotFound)
+		f.HandleNotFound(w, r)
 		return
 	}
 	instance.HandleV2BlobDigest(param, w, r)
+}
+
+func (f *factory) HandleNotFound(w http.ResponseWriter, r *http.Request) {
+	// Handle not found for Docker endpoints
+	http.Error(w, "Repository Not Found", http.StatusNotFound)
 }

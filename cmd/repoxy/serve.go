@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/davidjspooner/go-http-server/pkg/middleware"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/go-text-cli/pkg/cmd"
+	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
 type ServeOptions struct {
@@ -20,12 +22,21 @@ var serveCommand = cmd.NewCommand(
 	"serve",
 	"Start the repository proxy server",
 	func(ctx context.Context, options *ServeOptions, args []string) error {
-
+		repoConfig, err := repo.LoadConfigs(options.Config)
+		if err != nil {
+			return fmt.Errorf("failed to load repository configurations: %w", err)
+		}
 		serveMux := mux.NewServeMux(loggerMiddleware(), metric.Middleware(), &middleware.Recovery{})
 		serveMux.Handle("/metrics", metric.Handler())
-		http.ListenAndServe(":8080", serveMux)
-
-		return nil
+		repo.AddAllToMux(serveMux)
+		for _, r := range repoConfig.Repositories {
+			_, err := repo.NewRepository(ctx, r)
+			if err != nil {
+				return fmt.Errorf("failed to create repository instance for %s: %w", r.Name, err)
+			}
+		}
+		err = repoConfig.Server.ListenAndServe(ctx, serveMux)
+		return err
 	},
 	&ServeOptions{
 		Config: "config.yaml",
