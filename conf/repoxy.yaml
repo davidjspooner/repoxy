@@ -11,17 +11,15 @@ storage:
     url: file:///home/david/current/20250518_repoxy/tmp/data
 
 repos:
-    - name: "dockerhub"
+    - name: dockerhub
       type: docker
       upstream: 
         url: https://registry-1.docker.io
       mappings:
-        - local: "(*)/(*)"
-          upstream: $1/$2
-    - name: "github"
+        - "*/*"
+    - name: github
       type: docker
       upstream:
         url: https://ghcr.io
       mappings:
-        - local: "davidjspooner/(*)"
-          upstream: "davidjspooner/$1"
+        - "davidjspooner/*"

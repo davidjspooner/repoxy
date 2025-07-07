@@ -11,7 +11,8 @@ import (
 
 // factory implements the repo.Factory interface for Terraform and Tofu providers.
 type factory struct {
-	muxOnetimeDone bool // Used to ensure the mux is only set up once
+	muxOnetimeDone bool          // Used to ensure the mux is only set up once
+	instances      []*tfInstance // List of registered Terraform/Tofu instances
 }
 
 // init registers the Terraform and Tofu factories.
@@ -24,9 +25,15 @@ var _ repo.Factory = (*factory)(nil)
 
 // NewRepo creates a new Terraform or Tofu repository instance.
 func (f *factory) NewRepo(ctx context.Context, config *repo.Config) (repo.Instance, error) {
-	instance := &tfInstance{
-		config:  *config,
-		factory: f,
+	instance, err := NewInstance(config)
+	if err != nil {
+		return nil, err
+	}
+	f.instances = append(f.instances, instance)
+	if config.Type == "tofo" {
+		instance.tofu = true // Set tofu flag for Tofu instances
+	} else {
+		instance.tofu = false // Set tofu flag for Terraform instances
 	}
 	return instance, nil
 }
@@ -63,8 +70,17 @@ func (f *factory) lookupParam(r *http.Request) (*tfInstance, *param) {
 		version:   r.PathValue("version"),
 		tail:      r.PathValue("tail"),
 	}
-	slog.DebugContext(r.Context(), "Terraform/Tofu endpoint not found", slog.String("path", r.URL.Path))
-	return nil, ref
+	var bestInstance *tfInstance
+	var bestScore int
+	nameParts := []string{ref.namespace, ref.name}
+	for _, instance := range f.instances {
+		score := instance.GetMatchWeight(nameParts)
+		if score > bestScore {
+			bestScore = score
+			bestInstance = instance
+		}
+	}
+	return bestInstance, ref
 }
 
 // HandleV1VersionList handles requests for the list of provider versions.

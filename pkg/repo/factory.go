@@ -13,7 +13,7 @@ var ErrInvalidRepoType = errors.New("invalid proxy type")
 var ErrInvalidRepoConfig = errors.New("invalid proxy config")
 
 type Instance interface {
-	Config() Config
+	GetMatchWeight(name []string) int //weight
 }
 
 type Factory interface {

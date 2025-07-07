@@ -9,17 +9,26 @@ import (
 )
 
 type tfInstance struct {
-	tofu     bool
-	config   repo.Config
-	factory  *factory
-	pipeline client.MiddlewarePipeline
+	tofu         bool
+	config       repo.Config
+	pipeline     client.MiddlewarePipeline
+	nameMatchers repo.NameMatchers // Matchers for repository names
 }
 
 var _ repo.Instance = (*tfInstance)(nil)
 var _ client.Authenticator = (*tfInstance)(nil)
 
-func (d *tfInstance) Config() repo.Config {
-	return d.config
+func NewInstance(config *repo.Config) (*tfInstance, error) {
+	instance := &tfInstance{
+		config: *config,
+	}
+	instance.nameMatchers.Set(config.Mappings)
+	instance.pipeline = append(instance.pipeline, client.WithAuthentication(instance))
+	return instance, nil
+}
+
+func (d *tfInstance) GetMatchWeight(name []string) int {
+	return d.nameMatchers.GetMatchWeight(name)
 }
 
 func (d *tfInstance) HandleV1VersionList(param *param, w http.ResponseWriter, r *http.Request) {

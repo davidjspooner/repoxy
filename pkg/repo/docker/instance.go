@@ -10,14 +10,31 @@ import (
 
 // dockerInstance implements the repo.Instance interface for Docker repositories.
 type dockerInstance struct {
-	factory  *factory
-	config   repo.Config
-	pipeline client.MiddlewarePipeline
+	factory      *factory
+	config       repo.Config
+	pipeline     client.MiddlewarePipeline
+	nameMatchers repo.NameMatchers // Matchers for repository names
+}
+
+// NewDockerInstance creates a new Docker repository instance.
+// It initializes the instance with the factory and configuration, and sets up the authentication middleware.
+func NewDockerInstance(factory *factory, config *repo.Config) (*dockerInstance, error) {
+	instance := &dockerInstance{
+		factory: factory,
+		config:  *config,
+	}
+	instance.nameMatchers.Set(config.Mappings)
+	instance.pipeline = append(instance.pipeline, client.WithAuthentication(instance))
+	return instance, nil
 }
 
 // Ensure dockerInstance implements the repo.Instance , client.Authenticator, client.Cache interfaces.
 var _ repo.Instance = (*dockerInstance)(nil)
 var _ client.Authenticator = (*dockerInstance)(nil)
+
+func (d *dockerInstance) GetMatchWeight(name []string) int {
+	return d.nameMatchers.GetMatchWeight(name)
+}
 
 // HandledWriteMethodForReadOnlyRepo checks if the request is a write operation and returns a 405 if so.
 // Returns true if the request was handled (i.e., is not allowed), false otherwise.
@@ -39,7 +56,7 @@ func (d *dockerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *ht
 	}
 	// TODO : Implement the logic to handle tags requests
 	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle tags requests")
-	w.WriteHeader(http.StatusMethodNotAllowed)
+	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // HandleV2Manifest handles Docker V2 manifest requests. Returns a 405 for write operations.

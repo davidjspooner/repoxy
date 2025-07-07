@@ -2,17 +2,16 @@ package docker
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
+	"strings"
 
-	"github.com/davidjspooner/go-http-client/pkg/client"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
 // factory implements the repo.Factory interface for Docker repositories.
 type factory struct {
-	muxOnetimeDone bool
+	instances []*dockerInstance
 }
 
 // init registers the Docker factory.
@@ -25,11 +24,11 @@ var _ repo.Factory = (*factory)(nil)
 
 // NewRepo creates a new Docker repository instance.
 func (f *factory) NewRepo(ctx context.Context, config *repo.Config) (repo.Instance, error) {
-	instance := &dockerInstance{
-		factory: f,
-		config:  *config,
+	instance, err := NewDockerInstance(f, config)
+	if err != nil {
+		return nil, err
 	}
-	instance.pipeline = append(instance.pipeline, client.WithAuthentication(instance))
+	f.instances = append(f.instances, instance)
 	return instance, nil
 }
 
@@ -63,13 +62,22 @@ func (f *factory) lookupParam(r *http.Request) (*dockerInstance, *param) {
 		uuid:   r.PathValue("uuid"),
 		digest: r.PathValue("digest"),
 	}
-	return nil, param
+	var bestInstance *dockerInstance
+	var bestScore int
+	nameParts := strings.Split(param.name, "/")
+	for _, instance := range f.instances {
+		score := instance.GetMatchWeight(nameParts)
+		if score > bestScore {
+			bestScore = score
+			bestInstance = instance
+		}
+	}
+	return bestInstance, param
 }
 
 // HandleV2Catalog handles requests to the Docker v2 catalog endpoint.
 func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
 	// TODO : Implement the logic to handle the request for the Docker v2 catalog
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle the request for the Docker v2 catalog")
 	w.WriteHeader(http.StatusNotImplemented)
 	w.Write([]byte("V2 Catalog handler"))
 }

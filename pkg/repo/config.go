@@ -26,21 +26,14 @@ type Upstream struct {
 	Auth Auth   `yaml:"auth"`
 }
 
-// Mapping represents a mapping between source and destination paths.
-// This is used to define how paths in requests to the proxies should be mapped to upstream service paths.
-type Mapping struct {
-	Local    string `yaml:"local"`
-	Upstream string `yaml:"upstream"`
-}
-
 // Config represents a repository configuration.
 // It includes the name of the repository, its type (e.g., git, docker), upstream service details,
 // and a list of mappings that define how requests to this repository should be handled.
 type Config struct {
-	Name     string    `yaml:"name"`
-	Type     string    `yaml:"type"`
-	Upstream Upstream  `yaml:"upstream"`
-	Mappings []Mapping `yaml:"mappings"`
+	Name     string   `yaml:"name"`
+	Type     string   `yaml:"type"`
+	Upstream Upstream `yaml:"upstream"`
+	Mappings []string `yaml:"mappings"`
 }
 
 // Storage represents the storage configuration for the proxy.
