@@ -26,10 +26,10 @@ func main() {
 			return err
 		}, &GlobalOptions{LogOptions: cmd.LogOptions{Level: "info"}})
 
-	cmd.RootCommand = root
+	cmd.Root = root
 	versionCommand := cmd.VersionCommand()
 
-	subcommands := cmd.RootCommand.SubCommands()
+	subcommands := cmd.Root.SubCommands()
 	subcommands.MustAdd(
 		versionCommand,
 		serveCommand,

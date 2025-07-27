@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/repoxy/pkg/repo"
@@ -41,7 +42,7 @@ func (f *factory) AddToMux(mux *mux.ServeMux) error {
 	mux.HandleFunc("GET /v2/_catalog", f.HandleV2Catalog)
 
 	//tags
-	mux.HandleFunc("GET /v2/{name...}/tags/list", f.HandleV2Tags)
+	mux.HandleFunc("GET /v2/{name...}/tags/list", f.HandleV2Tags) //auto HEAD
 
 	//manifests
 	mux.HandleFunc("GET|PUT|DELETE /v2/{name...}/manifests/{tag}", f.HandleV2Manifest) //note tag may also match manifest
@@ -49,7 +50,7 @@ func (f *factory) AddToMux(mux *mux.ServeMux) error {
 	//blobs
 	mux.HandleFunc("POST /v2/{name...}/blobs/uploads/", f.HandleV2BlobUpload)
 	mux.HandleFunc("PATCH|PUT|DELETE /v2/{name...}/blobs/uploads/{uuid}", f.HandleV2BlobUID)
-	mux.HandleFunc("GET|HEAD|DELETE /v2/{name...}/blobs/{digest}", f.HandleV2BlobDigest)
+	mux.HandleFunc("GET|DELETE /v2/{name...}/blobs/{digest}", f.HandleV2BlobDigest) //auto HEAD
 	return nil
 }
 
@@ -85,8 +86,16 @@ func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
 // HandleV2 handles requests to the Docker v2 API root endpoint.
 func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
 	// TODO : Implement the logic to handle the request for the Docker v2 API root
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("V2 handler"))
+
+	w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+	w.Header().Set("Content-Length", "2")
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", time.Now().Format(http.TimeFormat))
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Write([]byte("{}"))
+
 }
 
 // HandleV2Tags handles requests to the Docker v2 tags endpoint.

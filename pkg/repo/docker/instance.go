@@ -1,8 +1,10 @@
 package docker
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
+	"net/url"
 
 	"github.com/davidjspooner/go-http-client/pkg/client"
 	"github.com/davidjspooner/repoxy/pkg/repo"
@@ -64,9 +66,7 @@ func (d *dockerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	// TODO : Implement the logic to handle manifest requests
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle manifest requests")
-	w.WriteHeader(http.StatusNotImplemented)
+	d.proxyToUpstream(r.Context(), r)
 }
 
 // HandleV2BlobUpload handles Docker V2 blob upload requests. Returns a 405 for write operations.
@@ -104,6 +104,7 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 	if challenge == "" {
 		return ""
 	}
+	//eg "Bearer realm=\"Bearer realm=\"https://auth.docker.io/token\",service=\"registry.docker.io\",scope=\"repository:library/bash:pull\"\""
 	challenges := client.ParseWWWAuthenticate(challenge)
 	for _, challenge := range challenges {
 		//TODO
@@ -113,11 +114,25 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 	return ""
 }
 
-func (d *dockerInstance) Client() client.Interface {
-	c := &http.Client{}
-	return d.pipeline.WrapClient(c)
-}
-
 func (d *dockerInstance) Config() repo.Config {
 	return d.config
+}
+
+func (d *dockerInstance) proxyToUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
+	u, err := url.Parse(d.config.Upstream.URL)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to parse upstream URL", "error", err)
+		return nil, err
+	}
+	u.Path = r.URL.Path
+	u.RawQuery = r.URL.RawQuery
+
+	req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
+	if err != nil {
+		slog.ErrorContext(ctx, "Failed to create new request", "error", err)
+		return nil, err
+	}
+	var c client.Interface = &http.Client{}
+	c = d.pipeline.WrapClient(c)
+	return c.Do(req)
 }
