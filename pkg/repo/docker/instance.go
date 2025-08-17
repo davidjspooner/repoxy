@@ -105,7 +105,11 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 		return ""
 	}
 	//eg "Bearer realm=\"Bearer realm=\"https://auth.docker.io/token\",service=\"registry.docker.io\",scope=\"repository:library/bash:pull\"\""
-	challenges := client.ParseWWWAuthenticate(challenge)
+	challenges, err := client.ParseWWWAuthenticate(context.Background(), challenge)
+	if err != nil {
+		slog.ErrorContext(response.Request.Context(), "Failed to parse WWW-Authenticate challenge", "error", err)
+		return ""
+	}
 	for _, challenge := range challenges {
 		//TODO
 		slog.DebugContext(response.Request.Context(), "TODO: Handle parsed WWW-Authenticate challenge")
