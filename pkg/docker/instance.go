@@ -2,6 +2,9 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -66,7 +69,12 @@ func (d *dockerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	d.proxyToUpstream(r.Context(), r)
+	err := d.proxyToUpstream(r.Context(), w, r)
+	if err != nil {
+		slog.ErrorContext(r.Context(), "Failed to proxy request to upstream", "error", err)
+		w.WriteHeader(http.StatusBadGateway)
+		return
+	}
 }
 
 // HandleV2BlobUpload handles Docker V2 blob upload requests. Returns a 405 for write operations.
@@ -89,14 +97,13 @@ func (d *dockerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// HandleV2BlobDigest handles Docker V2 blob digest requests. Returns a 405 for write operations.
-func (d *dockerInstance) HandleV2BlobDigest(param *param, w http.ResponseWriter, r *http.Request) {
+// HandleV2BlobByDigest handles Docker V2 blob digest requests. Returns a 405 for write operations.
+func (d *dockerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	// TODO : Implement the logic to handle blob digest requests
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle blob digest requests")
-	w.WriteHeader(http.StatusNotImplemented)
+	// TODO : add caching logic eg check if we have the blob locally, if so return , otherwise fetch from upstream and add to local cache
+	d.proxyToUpstream(r.Context(), w, r)
 }
 
 func (d *dockerInstance) Authenticate(response *http.Response) string {
@@ -111,9 +118,49 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 		return ""
 	}
 	for _, challenge := range challenges {
-		//TODO
-		slog.DebugContext(response.Request.Context(), "TODO: Handle parsed WWW-Authenticate challenge")
-		_ = challenge
+
+		if challenge.Scheme != "Bearer" {
+			continue
+		}
+		client := http.Client{}
+		client.Get("https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/bash:pull")
+
+		//challenge= {Scheme: "Bearer", Params: map[string]string ["realm": "https://auth.docker.io/token", "service": "registry.docker.io", "scope": "repository:library/bash:pull", ]}
+
+		urlStr, ok := challenge.Params["realm"]
+		if !ok {
+			slog.ErrorContext(response.Request.Context(), "Failed to get realm from WWW-Authenticate challenge")
+			return ""
+		}
+		service, ok := challenge.Params["service"]
+		if !ok {
+			slog.ErrorContext(response.Request.Context(), "Failed to get service from WWW-Authenticate challenge")
+			return ""
+		}
+		scope, ok := challenge.Params["scope"]
+		if !ok {
+			slog.ErrorContext(response.Request.Context(), "Failed to get scope from WWW-Authenticate challenge")
+			return ""
+		}
+		urlStr += fmt.Sprintf("?service=%s&scope=%s", service, scope)
+		r, err := http.Get(urlStr)
+		if err != nil {
+			slog.ErrorContext(response.Request.Context(), "Failed to get token", "error", err)
+			return ""
+		}
+		defer r.Body.Close()
+		if r.StatusCode != http.StatusOK {
+			slog.ErrorContext(response.Request.Context(), "Failed to get token", "status", r.Status)
+			return ""
+		}
+		var tokenResp struct {
+			Token string `json:"token"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&tokenResp); err != nil {
+			slog.ErrorContext(response.Request.Context(), "Failed to decode token response", "error", err)
+			return ""
+		}
+		return "Bearer " + tokenResp.Token
 	}
 	return ""
 }
@@ -122,21 +169,35 @@ func (d *dockerInstance) Config() repo.Config {
 	return d.config
 }
 
-func (d *dockerInstance) proxyToUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
+func (d *dockerInstance) proxyToUpstream(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	u, err := url.Parse(d.config.Upstream.URL)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to parse upstream URL", "error", err)
-		return nil, err
+		return err
 	}
 	u.Path = r.URL.Path
 	u.RawQuery = r.URL.RawQuery
 
 	req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to create new request", "error", err)
-		return nil, err
+		return err
 	}
 	var c client.Interface = &http.Client{}
 	c = d.pipeline.WrapClient(c)
-	return c.Do(req)
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	// Copy the response headers and status code from the upstream response
+	for key, values := range resp.Header {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
+	w.WriteHeader(resp.StatusCode)
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -50,7 +50,7 @@ func (f *factory) AddToMux(mux *mux.ServeMux) error {
 	//blobs
 	mux.HandleFunc("POST /v2/{name...}/blobs/uploads/", f.HandleV2BlobUpload)
 	mux.HandleFunc("PATCH|PUT|DELETE /v2/{name...}/blobs/uploads/{uuid}", f.HandleV2BlobUID)
-	mux.HandleFunc("GET|DELETE /v2/{name...}/blobs/{digest}", f.HandleV2BlobDigest) //auto HEAD
+	mux.HandleFunc("GET|DELETE /v2/{name...}/blobs/{digest}", f.HandleV2BlobByDigest) //auto HEAD
 	return nil
 }
 
@@ -85,16 +85,14 @@ func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
 
 // HandleV2 handles requests to the Docker v2 API root endpoint.
 func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
-	// TODO : Implement the logic to handle the request for the Docker v2 API root
+    w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+    w.Header().Set("Content-Length", "2")
+    w.Header().Set("Content-Type", "application/json")
+    w.Header().Set("Date", time.Now().Format(http.TimeFormat))
 
-	w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-	w.Header().Set("Content-Length", "2")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Date", time.Now().Format(http.TimeFormat))
+    w.WriteHeader(http.StatusOK)
 
-	w.WriteHeader(http.StatusOK)
-
-	w.Write([]byte("{}"))
+    w.Write([]byte("{}"))
 
 }
 
@@ -138,14 +136,14 @@ func (f *factory) HandleV2BlobUID(w http.ResponseWriter, r *http.Request) {
 	instance.HandleV2BlobUID(param, w, r)
 }
 
-// HandleV2BlobDigest handles requests to the Docker v2 blob digest endpoint.
-func (f *factory) HandleV2BlobDigest(w http.ResponseWriter, r *http.Request) {
+// HandleV2BlobByDigest handles requests to the Docker v2 blob digest endpoint.
+func (f *factory) HandleV2BlobByDigest(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
 		f.HandleNotFound(w, r)
 		return
 	}
-	instance.HandleV2BlobDigest(param, w, r)
+	instance.HandleV2BlobByDigest(param, w, r)
 }
 
 func (f *factory) HandleNotFound(w http.ResponseWriter, r *http.Request) {

@@ -7,8 +7,8 @@ import (
 
 	"github.com/davidjspooner/go-text-cli/pkg/cmd"
 
-	_ "github.com/davidjspooner/repoxy/pkg/repo/docker"
-	_ "github.com/davidjspooner/repoxy/pkg/repo/tf"
+	_ "github.com/davidjspooner/repoxy/pkg/docker"
+	_ "github.com/davidjspooner/repoxy/pkg/tf"
 )
 
 type GlobalOptions struct {
