@@ -24,7 +24,7 @@ func init() {
 var _ repo.Factory = (*factory)(nil)
 
 // NewRepo creates a new Terraform or Tofu repository instance.
-func (f *factory) NewRepo(ctx context.Context, config *repo.Config) (repo.Instance, error) {
+func (f *factory) NewRepo(ctx context.Context, config *repo.Repo) (repo.Instance, error) {
 	instance, err := NewInstance(config)
 	if err != nil {
 		return nil, err

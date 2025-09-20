@@ -10,7 +10,7 @@ import (
 
 type tfInstance struct {
 	tofu         bool
-	config       repo.Config
+	config       repo.Repo
 	pipeline     client.MiddlewarePipeline
 	nameMatchers repo.NameMatchers // Matchers for repository names
 }
@@ -18,7 +18,7 @@ type tfInstance struct {
 var _ repo.Instance = (*tfInstance)(nil)
 var _ client.Authenticator = (*tfInstance)(nil)
 
-func NewInstance(config *repo.Config) (*tfInstance, error) {
+func NewInstance(config *repo.Repo) (*tfInstance, error) {
 	instance := &tfInstance{
 		config: *config,
 	}

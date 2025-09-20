@@ -18,7 +18,7 @@ type Instance interface {
 
 type Factory interface {
 	// Create creates a new proxy instance
-	NewRepo(ctx context.Context, config *Config) (Instance, error)
+	NewRepo(ctx context.Context, config *Repo) (Instance, error)
 	AddToMux(mux *mux.ServeMux) error
 }
 
@@ -47,7 +47,7 @@ func AddAllToMux(mux *mux.ServeMux) error {
 	return nil
 }
 
-func NewRepository(ctx context.Context, config *Config) (Instance, error) {
+func NewRepository(ctx context.Context, config *Repo) (Instance, error) {
 	factoryLock.RLock()
 	defer factoryLock.RUnlock()
 	factory, ok := factories[config.Type]

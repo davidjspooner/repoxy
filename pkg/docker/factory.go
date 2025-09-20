@@ -24,7 +24,7 @@ func init() {
 var _ repo.Factory = (*factory)(nil)
 
 // NewRepo creates a new Docker repository instance.
-func (f *factory) NewRepo(ctx context.Context, config *repo.Config) (repo.Instance, error) {
+func (f *factory) NewRepo(ctx context.Context, config *repo.Repo) (repo.Instance, error) {
 	instance, err := NewDockerInstance(f, config)
 	if err != nil {
 		return nil, err
@@ -85,14 +85,14 @@ func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
 
 // HandleV2 handles requests to the Docker v2 API root endpoint.
 func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
-    w.Header().Set("Content-Length", "2")
-    w.Header().Set("Content-Type", "application/json")
-    w.Header().Set("Date", time.Now().Format(http.TimeFormat))
+	w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
+	w.Header().Set("Content-Length", "2")
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", time.Now().Format(http.TimeFormat))
 
-    w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 
-    w.Write([]byte("{}"))
+	w.Write([]byte("{}"))
 
 }
 

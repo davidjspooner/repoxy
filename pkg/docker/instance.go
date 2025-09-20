@@ -16,14 +16,14 @@ import (
 // dockerInstance implements the repo.Instance interface for Docker repositories.
 type dockerInstance struct {
 	factory      *factory
-	config       repo.Config
+	config       repo.Repo
 	pipeline     client.MiddlewarePipeline
 	nameMatchers repo.NameMatchers // Matchers for repository names
 }
 
 // NewDockerInstance creates a new Docker repository instance.
 // It initializes the instance with the factory and configuration, and sets up the authentication middleware.
-func NewDockerInstance(factory *factory, config *repo.Config) (*dockerInstance, error) {
+func NewDockerInstance(factory *factory, config *repo.Repo) (*dockerInstance, error) {
 	instance := &dockerInstance{
 		factory: factory,
 		config:  *config,
@@ -165,7 +165,7 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 	return ""
 }
 
-func (d *dockerInstance) Config() repo.Config {
+func (d *dockerInstance) Config() repo.Repo {
 	return d.config
 }
 
