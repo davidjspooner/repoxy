@@ -47,7 +47,7 @@ func AddAllToMux(mux *mux.ServeMux) error {
 	return nil
 }
 
-func NewRepository(ctx context.Context, config *Repo) (Instance, error) {
+func NewRepository(ctx context.Context, forest *StorageForest, config *Repo) (Instance, error) {
 	factoryLock.RLock()
 	defer factoryLock.RUnlock()
 	factory, ok := factories[config.Type]

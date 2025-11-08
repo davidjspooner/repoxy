@@ -12,6 +12,8 @@ import (
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/go-text-cli/pkg/cmd"
 	"github.com/davidjspooner/repoxy/pkg/repo"
+
+	_ "github.com/davidjspooner/go-fs/pkg/storage/localfile"
 )
 
 type ServeOptions struct {
@@ -29,8 +31,12 @@ var serveCommand = cmd.NewCommand(
 		serveMux := mux.NewServeMux(loggerMiddleware(), metric.Middleware(), &middleware.Recovery{})
 		serveMux.Handle("/metrics", metric.Handler())
 		repo.AddAllToMux(serveMux)
+		forest, err := repo.NewStorageForest(ctx, repoConfig.Storage)
+		if err != nil {
+			return fmt.Errorf("failed to connect to storage forest: %w", err)
+		}
 		for _, r := range repoConfig.Repositories {
-			_, err := repo.NewRepository(ctx, r)
+			_, err := repo.NewRepository(ctx, forest, r)
 			if err != nil {
 				return fmt.Errorf("failed to create repository instance for %s: %w", r.Name, err)
 			}

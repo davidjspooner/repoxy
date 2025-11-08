@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/repoxy/pkg/listener"
 	"gopkg.in/yaml.v3"
 )
@@ -33,8 +34,8 @@ type Repo struct {
 // This is used for caching immutable artifacts fetched from upstream services.
 // Examples could be a file storage service, an object storage service, etc.
 type Storage struct {
-	URL    string            `yaml:"url"`
-	Config map[string]string `yaml:"config"`
+	URL    string         `yaml:"url"`
+	Config storage.Config `yaml:"config"`
 }
 
 // File represents the overall configuration for repoxy
