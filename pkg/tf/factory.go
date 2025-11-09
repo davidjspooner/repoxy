@@ -2,10 +2,13 @@ package tf
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
@@ -40,11 +43,19 @@ func (f *tfType) NewRepository(ctx context.Context, config *repo.Repo) (repo.Ins
 	if err != nil {
 		return nil, err
 	}
-	refsHelper, err := repo.NewStorageHelper(refsFS)
+	refsHelper, err := repo.NewStorageHelper(refsFS, config.Type, config.Name)
 	if err != nil {
 		return nil, err
 	}
-	instance, err := NewInstance(config, proxyFS, refsHelper)
+	packagesFS, err := proxyFS.EnsureSub(ctx, "packages")
+	if err != nil {
+		return nil, err
+	}
+	packagesHelper, err := repo.NewStorageHelper(packagesFS, config.Type, fmt.Sprintf("%s-packages", config.Name))
+	if err != nil {
+		return nil, err
+	}
+	instance, err := NewInstance(config, proxyFS, refsHelper, packagesHelper)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +84,13 @@ func (f *tfType) Initialize(ctx context.Context, typeName string, fs storage.Wri
 
 // HandleWellKnownTerraform handles requests to the .well-known/terraform.json endpoint.
 func (f *tfType) HandleWellKnownTerraform(w http.ResponseWriter, r *http.Request) {
-	//TODO: implement the logic to handle the request for the .well-known/terraform.json
-	slog.DebugContext(r.Context(), "TODO: implement the logic to handle the request for the .well-known/terraform.json")
-
-	// 	{
-	// 	  "providers.v1": "https://registry.opentofu.org/v1/providers/",
-	// 	}
-	w.WriteHeader(http.StatusNotImplemented)
+	resp := map[string]string{
+		"providers.v1": fmt.Sprintf("%s://%s/v1/providers/", detectScheme(r), r.Host),
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		slog.ErrorContext(r.Context(), "failed to encode well-known terraform response", "error", err)
+	}
 }
 
 // lookupParam extracts the provider reference from the request path.
@@ -135,4 +146,17 @@ func (f *tfType) HandleV1VersionDownload(w http.ResponseWriter, r *http.Request)
 // HandleNotFound handles requests to endpoints that are not found.
 func (f *tfType) HandleNotFound(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Repository Not Found", http.StatusNotFound)
+}
+
+func detectScheme(r *http.Request) string {
+	if forwarded := r.Header.Get("X-Forwarded-Proto"); forwarded != "" {
+		return strings.TrimSpace(strings.Split(forwarded, ",")[0])
+	}
+	if r.TLS != nil {
+		return "https"
+	}
+	if r.URL != nil && r.URL.Scheme != "" {
+		return r.URL.Scheme
+	}
+	return "http"
 }
