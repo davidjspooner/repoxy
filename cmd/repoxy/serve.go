@@ -30,13 +30,15 @@ var serveCommand = cmd.NewCommand(
 		}
 		serveMux := mux.NewServeMux(loggerMiddleware(), metric.Middleware(), &middleware.Recovery{})
 		serveMux.Handle("/metrics", metric.Handler())
-		repo.AddAllToMux(serveMux)
-		forest, err := repo.NewStorageForest(ctx, repoConfig.Storage)
+		fs, err := repo.NewStorageRoot(ctx, repoConfig.Storage)
 		if err != nil {
-			return fmt.Errorf("failed to connect to storage forest: %w", err)
+			return fmt.Errorf("failed to connect to storage root: %w", err)
+		}
+		if err := repo.Initialize(ctx, fs, serveMux); err != nil {
+			return fmt.Errorf("failed to initialize repository types: %w", err)
 		}
 		for _, r := range repoConfig.Repositories {
-			_, err := repo.NewRepository(ctx, forest, r)
+			_, err := repo.NewRepository(ctx, r)
 			if err != nil {
 				return fmt.Errorf("failed to create repository instance for %s: %w", r.Name, err)
 			}

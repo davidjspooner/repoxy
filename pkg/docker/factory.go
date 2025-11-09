@@ -2,30 +2,40 @@ package docker
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-// factory implements the repo.Factory interface for Docker repositories.
+// factory implements the repo.Type interface for Docker repositories.
 type factory struct {
 	instances []*dockerInstance
+	fs        storage.WritableFS
+	blobs     *repo.BlobHelper
 }
 
 // init registers the Docker factory.
 func init() {
-	repo.MustRegisterFactory("docker", &factory{})
+	repo.MustRegisterType("docker", &factory{})
 }
 
-// Ensure factory implements repo.Factory.
-var _ repo.Factory = (*factory)(nil)
+// Ensure factory implements repo.Type.
+var _ repo.Type = (*factory)(nil)
 
-// NewRepo creates a new Docker repository instance.
-func (f *factory) NewRepo(ctx context.Context, config *repo.Repo) (repo.Instance, error) {
-	instance, err := NewDockerInstance(f, config)
+// NewRepository creates a new Docker repository instance.
+func (f *factory) NewRepository(ctx context.Context, config *repo.Repo) (repo.Instance, error) {
+	if f.fs == nil {
+		return nil, errors.New("docker type not initialized")
+	}
+	if f.blobs == nil {
+		return nil, errors.New("docker blob helper not initialized")
+	}
+	instance, err := NewDockerInstance(f, f.fs, f.blobs, config)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +43,14 @@ func (f *factory) NewRepo(ctx context.Context, config *repo.Repo) (repo.Instance
 	return instance, nil
 }
 
-// AddToMux registers HTTP handlers for Docker endpoints on the mux.
-func (f *factory) AddToMux(mux *mux.ServeMux) error {
+// Initialize registers HTTP handlers for Docker endpoints on the mux and prepares type-level resources.
+func (f *factory) Initialize(ctx context.Context, typeName string, fs storage.WritableFS, mux *mux.ServeMux) error {
+	f.fs = fs
+	helper, err := repo.NewBlobHelper(ctx, fs)
+	if err != nil {
+		return err
+	}
+	f.blobs = helper
 	// API Root
 	mux.HandleFunc("GET /v2/", f.HandleV2)
 

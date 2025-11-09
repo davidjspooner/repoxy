@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 
+	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-client/pkg/client"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
@@ -16,6 +18,8 @@ import (
 // dockerInstance implements the repo.Instance interface for Docker repositories.
 type dockerInstance struct {
 	factory      *factory
+	fs           storage.WritableFS
+	blobs        *repo.BlobHelper
 	config       repo.Repo
 	pipeline     client.MiddlewarePipeline
 	nameMatchers repo.NameMatchers // Matchers for repository names
@@ -23,9 +27,11 @@ type dockerInstance struct {
 
 // NewDockerInstance creates a new Docker repository instance.
 // It initializes the instance with the factory and configuration, and sets up the authentication middleware.
-func NewDockerInstance(factory *factory, config *repo.Repo) (*dockerInstance, error) {
+func NewDockerInstance(factory *factory, fs storage.WritableFS, blobs *repo.BlobHelper, config *repo.Repo) (*dockerInstance, error) {
 	instance := &dockerInstance{
 		factory: factory,
+		fs:      fs,
+		blobs:   blobs,
 		config:  *config,
 	}
 	instance.nameMatchers.Set(config.Mappings)
@@ -102,8 +108,16 @@ func (d *dockerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWrite
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	// TODO : add caching logic eg check if we have the blob locally, if so return , otherwise fetch from upstream and add to local cache
-	d.proxyToUpstream(r.Context(), w, r)
+	if param == nil || param.digest == "" || d.blobs == nil {
+		_ = d.proxyToUpstream(r.Context(), w, r)
+		return
+	}
+	if d.serveLocalBlob(param, w, r) {
+		return
+	}
+	if err := d.fetchAndStoreBlob(param, w, r); err != nil {
+		slog.ErrorContext(r.Context(), "failed to proxy blob request", "error", err)
+	}
 }
 
 func (d *dockerInstance) Authenticate(response *http.Response) string {
@@ -170,34 +184,89 @@ func (d *dockerInstance) Config() repo.Repo {
 }
 
 func (d *dockerInstance) proxyToUpstream(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	u, err := url.Parse(d.config.Upstream.URL)
+	resp, err := d.roundTripUpstream(ctx, r)
 	if err != nil {
 		return err
+	}
+	defer resp.Body.Close()
+	d.writeHeadersFromResponse(w, resp)
+	w.WriteHeader(resp.StatusCode)
+	if resp.Body == nil {
+		return nil
+	}
+	_, err = io.Copy(w, resp.Body)
+	return err
+}
+
+func (d *dockerInstance) roundTripUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
+	u, err := url.Parse(d.config.Upstream.URL)
+	if err != nil {
+		return nil, err
 	}
 	u.Path = r.URL.Path
 	u.RawQuery = r.URL.RawQuery
 
 	req, err := http.NewRequestWithContext(ctx, r.Method, u.String(), r.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	req.Header = r.Header.Clone()
 	var c client.Interface = &http.Client{}
 	c = d.pipeline.WrapClient(c)
 	resp, err := c.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer resp.Body.Close()
-	// Copy the response headers and status code from the upstream response
+	return resp, nil
+}
+
+func (d *dockerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *http.Response) {
 	for key, values := range resp.Header {
 		for _, value := range values {
 			w.Header().Add(key, value)
 		}
 	}
-	w.WriteHeader(resp.StatusCode)
-	_, err = io.Copy(w, resp.Body)
+}
+
+func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
+	reader, err := d.blobs.Open(r.Context(), param.digest)
+	if err != nil {
+		return false
+	}
+	defer reader.Close()
+	if info, err := d.blobs.Stat(r.Context(), param.digest); err == nil {
+		w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
+	}
+	w.Header().Set("Docker-Content-Digest", param.digest)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.WriteHeader(http.StatusOK)
+	if _, err := io.Copy(w, reader); err != nil {
+		slog.ErrorContext(r.Context(), "failed to stream cached blob", "error", err)
+	}
+	return true
+}
+
+func (d *dockerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+	resp, err := d.roundTripUpstream(ctx, r)
 	if err != nil {
 		return err
 	}
-	return nil
+	defer resp.Body.Close()
+
+	d.writeHeadersFromResponse(w, resp)
+	w.Header().Set("Docker-Content-Digest", param.digest)
+	w.WriteHeader(resp.StatusCode)
+
+	if resp.Body == nil || r.Method == http.MethodHead {
+		return nil
+	}
+	if resp.StatusCode != http.StatusOK {
+		_, err = io.Copy(w, resp.Body)
+		return err
+	}
+
+	tee := io.TeeReader(resp.Body, w)
+	_, err = d.blobs.Store(ctx, param.digest, tee)
+	return err
 }

@@ -50,7 +50,6 @@ func (nm NameMatchers) GetMatchWeight(name []string) int {
 			if matcher.weight > bestWeight {
 				bestWeight = matcher.weight
 			}
-			break // Found a match, no need to check further
 		}
 	}
 	return bestWeight

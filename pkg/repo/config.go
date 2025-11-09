@@ -71,6 +71,9 @@ func LoadConfigs(fileglobs ...string) (*File, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to glob config files %s: %w", fileglob, err)
 		}
+		if len(filenames) == 0 {
+			return nil, fmt.Errorf("no config files matched %s", fileglob)
+		}
 		for _, filename := range filenames {
 			if filename == "" {
 				continue
