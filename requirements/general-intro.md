@@ -27,6 +27,15 @@ Success means smooth onboarding of additional repository types while maintaining
 | Upstream          | The remote artifact service being proxied (Docker Hub, GHCR, registry.terraform.io).     |
 | Mapping           | A glob-style rule that determines which requests a repository instance handles.          |
 
+### Repository Modes
+
+Every repository instance ultimately operates in one of two modes:
+
+1. **Read-only pull-through cache** – Repoxy fronts an upstream registry, handles only GET/HEAD semantics, and optionally stores immutable artifacts locally for faster subsequent pulls. This is the default and **only supported mode in the MVP**.
+2. **Writable local origin** – Repoxy would behave like an origin registry with no upstream, accepting writes and serving content from local storage only. **Out of scope for the MVP**; do not build or assume write paths yet.
+
+When extending repo types, ensure the docs and configuration make the mode explicit. Any write-path code must remain disabled until we formally support mode (2).
+
 ---
 
 ## 3. Architecture Snapshot
@@ -82,6 +91,7 @@ the filesystem.
 - Building a full UI or admin console inside this repo (future project).
 - Re-implementing artifact formats (OCI, Terraform modules) from scratch—Repoxy proxies existing upstreams.
 - Introducing ad-hoc filesystem access: all persistent storage must flow through go-fs.
+- Supporting fully writable, no-upstream repositories in the MVP. Until this restriction is lifted, all implementations should assume read-only, pull-through caching semantics.
 
 ---
 

@@ -11,6 +11,15 @@ All repositories share a **single writable filesystem** (the shared storage root
 That root may be backed by any `go-fs` backend such as `file://`, `s3://`, or `mem://`.
 Each proxy operates within a sandboxed subdirectory under this root and cannot escape its assigned area.
 
+### Supported Modes
+
+Repoxy eventually needs to support two repository modes:
+
+1. **Read-only pull-through cache** – proxy forwards requests to an upstream, optionally persisting immutable blobs/refs locally. This is the current and **only** mode implemented in the MVP.
+2. **Writable local origin** – proxy accepts client writes and serves content solely from local storage with no upstream.
+
+While the storage layout already reserves space for metadata/cache/tmp directories that a future writable mode could reuse, **do not implement write paths yet**. All code should assume pull-through caching semantics until the project formally graduates writable repos from the backlog.
+
 ---
 
 ## 2. Top-Level Directory Structure
