@@ -23,3 +23,15 @@ repos:
         url: https://ghcr.io
       mappings:
         - "davidjspooner/*"
+    - name: terraform-hashicorp
+      type: terraform
+      upstream:
+        url: https://registry.terraform.io
+      mappings:
+        - "hashicorp/*"
+    - name: opentofu-registry
+      type: tofo
+      upstream:
+        url: https://registry.opentofu.org
+      mappings:
+        - "opentofu/*"
