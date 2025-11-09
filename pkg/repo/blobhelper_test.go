@@ -31,7 +31,7 @@ func TestBlobHelperStoreAndOpen(t *testing.T) {
 	ctx := context.Background()
 	fs := newMemoryFS(t)
 
-	helper, err := NewBlobHelper(ctx, fs)
+	helper, err := NewBlobHelper(ctx, "docker", fs)
 	if err != nil {
 		t.Fatalf("NewBlobHelper failed: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestBlobHelperAdopt(t *testing.T) {
 
 	ctx := context.Background()
 	fs := newMemoryFS(t)
-	helper, err := NewBlobHelper(ctx, fs)
+	helper, err := NewBlobHelper(ctx, "docker", fs)
 	if err != nil {
 		t.Fatalf("NewBlobHelper failed: %v", err)
 	}

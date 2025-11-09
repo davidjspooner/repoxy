@@ -18,7 +18,7 @@ type BlobHelper struct {
 }
 
 // NewBlobHelper prepares the shared blobs/ and tmp/ subdirectories under a repository type root.
-func NewBlobHelper(ctx context.Context, typeFS storage.WritableFS) (*BlobHelper, error) {
+func NewBlobHelper(ctx context.Context, typeName string, typeFS storage.WritableFS) (*BlobHelper, error) {
 	if typeFS == nil {
 		return nil, fmt.Errorf("type filesystem is nil")
 	}
@@ -30,7 +30,11 @@ func NewBlobHelper(ctx context.Context, typeFS storage.WritableFS) (*BlobHelper,
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare tmp subtree: %w", err)
 	}
-	storageHelper, err := NewStorageHelper(blobsFS)
+	repoLabel := fmt.Sprintf("%s-blobs", typeName)
+	if typeName == "" {
+		repoLabel = "blobs"
+	}
+	storageHelper, err := NewStorageHelper(blobsFS, typeName, repoLabel)
 	if err != nil {
 		return nil, err
 	}

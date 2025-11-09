@@ -46,7 +46,7 @@ func (f *factory) NewRepository(ctx context.Context, config *repo.Repo) (repo.In
 // Initialize registers HTTP handlers for Docker endpoints on the mux and prepares type-level resources.
 func (f *factory) Initialize(ctx context.Context, typeName string, fs storage.WritableFS, mux *mux.ServeMux) error {
 	f.fs = fs
-	helper, err := repo.NewBlobHelper(ctx, fs)
+	helper, err := repo.NewBlobHelper(ctx, typeName, fs)
 	if err != nil {
 		return err
 	}

@@ -26,7 +26,7 @@ func newWritableMemFS(t *testing.T) storage.WritableFS {
 func TestStorageHelperStoreAndOpen(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
-	helper, err := NewStorageHelper(newWritableMemFS(t))
+	helper, err := NewStorageHelper(newWritableMemFS(t), "terraform", "test")
 	if err != nil {
 		t.Fatalf("NewStorageHelper failed: %v", err)
 	}
