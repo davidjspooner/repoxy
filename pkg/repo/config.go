@@ -17,6 +17,13 @@ type Upstream struct {
 	// URL is the URL of the upstream service . eg https://index.docker.io/
 	URL    string            `yaml:"url"`
 	Config map[string]string `yaml:"config"`
+	Auth   *UpstreamAuth     `yaml:"auth"`
+}
+
+// UpstreamAuth describes optional credentials for the upstream registry.
+type UpstreamAuth struct {
+	Provider string            `yaml:"provider"`
+	Config   map[string]string `yaml:"config"`
 }
 
 // Repo represents a repository configuration.

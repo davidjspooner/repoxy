@@ -2,8 +2,6 @@ package docker
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -24,6 +22,8 @@ type dockerInstance struct {
 	pipeline          client.MiddlewarePipeline
 	nameMatchers      repo.NameMatchers // Matchers for repository names
 	httpClientFactory func() client.Interface
+	tokenHTTP         httpDoer
+	auth              *dockerUpstreamAuth
 }
 
 // NewDockerInstance creates a new Docker repository instance.
@@ -40,6 +40,12 @@ func NewDockerInstance(factory *factory, fs storage.WritableFS, blobs *repo.Blob
 	instance.httpClientFactory = func() client.Interface {
 		return &http.Client{}
 	}
+	instance.tokenHTTP = &http.Client{}
+	auth, err := newDockerUpstreamAuth(instance.tokenHTTP, config.Upstream)
+	if err != nil {
+		return nil, err
+	}
+	instance.auth = auth
 	return instance, nil
 }
 
@@ -126,62 +132,15 @@ func (d *dockerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWrite
 }
 
 func (d *dockerInstance) Authenticate(response *http.Response) string {
-	challenge := response.Header.Get("WWW-Authenticate")
-	if challenge == "" {
+	if response == nil || d.auth == nil {
 		return ""
 	}
-	//eg "Bearer realm=\"Bearer realm=\"https://auth.docker.io/token\",service=\"registry.docker.io\",scope=\"repository:library/bash:pull\"\""
-	challenges, err := client.ParseWWWAuthenticate(context.Background(), challenge)
+	header, err := d.auth.authorization(response)
 	if err != nil {
-		slog.ErrorContext(response.Request.Context(), "Failed to parse WWW-Authenticate challenge", "error", err)
+		slog.ErrorContext(response.Request.Context(), "failed to build upstream auth header", "error", err)
 		return ""
 	}
-	for _, challenge := range challenges {
-
-		if challenge.Scheme != "Bearer" {
-			continue
-		}
-		client := http.Client{}
-		client.Get("https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/bash:pull")
-
-		//challenge= {Scheme: "Bearer", Params: map[string]string ["realm": "https://auth.docker.io/token", "service": "registry.docker.io", "scope": "repository:library/bash:pull", ]}
-
-		urlStr, ok := challenge.Params["realm"]
-		if !ok {
-			slog.ErrorContext(response.Request.Context(), "Failed to get realm from WWW-Authenticate challenge")
-			return ""
-		}
-		service, ok := challenge.Params["service"]
-		if !ok {
-			slog.ErrorContext(response.Request.Context(), "Failed to get service from WWW-Authenticate challenge")
-			return ""
-		}
-		scope, ok := challenge.Params["scope"]
-		if !ok {
-			slog.ErrorContext(response.Request.Context(), "Failed to get scope from WWW-Authenticate challenge")
-			return ""
-		}
-		urlStr += fmt.Sprintf("?service=%s&scope=%s", service, scope)
-		r, err := http.Get(urlStr)
-		if err != nil {
-			slog.ErrorContext(response.Request.Context(), "Failed to get token", "error", err)
-			return ""
-		}
-		defer r.Body.Close()
-		if r.StatusCode != http.StatusOK {
-			slog.ErrorContext(response.Request.Context(), "Failed to get token", "status", r.Status)
-			return ""
-		}
-		var tokenResp struct {
-			Token string `json:"token"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&tokenResp); err != nil {
-			slog.ErrorContext(response.Request.Context(), "Failed to decode token response", "error", err)
-			return ""
-		}
-		return "Bearer " + tokenResp.Token
-	}
-	return ""
+	return header
 }
 
 func (d *dockerInstance) Config() repo.Repo {

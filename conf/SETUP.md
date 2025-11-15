@@ -65,7 +65,44 @@ docker pull repoxy.example.com/davidjspooner/my-image:tag
 - The path after the hostname (`davidjspooner/my-image`) matches the `mappings` entry `davidjspooner/*`, so Repoxy proxies the request to `ghcr.io/davidjspooner/my-image`.
 - Tag images accordingly in CI/CD (`repoxy.example.com/davidjspooner/app:sha`).
 
-If GHCR requires authentication, run `docker login repoxy.example.com` (Repoxy will forward credentials upstream once authentication middleware is implemented).
+If GHCR requires authentication, add credentials under `upstream.auth` so Repoxy can mint upstream tokens:
+
+```yaml
+repos:
+  - name: github
+    type: docker
+    upstream:
+      url: https://ghcr.io
+      auth:
+        provider: ghcr
+        config:
+          username: github-user
+          password: ghcr_pat
+```
+
+After updating the config, run `docker login repoxy.example.com` so clients store credentials for the proxy host; Repoxy will exchange them for GHCR access tokens.
+
+### 2.3 AWS ECR example
+
+Repoxy can also front private Amazon ECR registries by supplying AWS credentials to the upstream:
+
+```yaml
+repos:
+  - name: prod-ecr
+    type: docker
+    upstream:
+      url: https://123456789012.dkr.ecr.us-east-1.amazonaws.com
+      auth:
+        provider: ecr
+        config:
+          region: us-east-1
+          access_key_id: AKIA...
+          secret_access_key: YOUR_SECRET
+          session_token: optional-session-token
+          registry_id: "123456789012"
+```
+
+Repoxy automatically refreshes the short-lived ECR authorization tokens and caches them per repository.
 
 ---
 

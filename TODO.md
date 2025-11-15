@@ -1,8 +1,10 @@
+## done
+- **Upstream auth plumbing:** Docker repos now read `upstream.auth` blocks (Docker Hub, GHCR, AWS ECR) and inject the proper upstream headers via the HTTP client middleware.
+
 ## Version 0.1 – Harden the Core Proxy
 1. **Protocol completion:** finish Terraform/OpenTofu mirror support (well-known endpoint, metadata caching, package caching, `.terraformrc` docs) 
 2. **Protocol completion:** ensure Docker read-only flows work for Docker Hub + GHCR with - only cache blobs , other data should be fetched as needed from upstream
-3. **Upstream Auth plumbing:** add upstream auth configuration for containers (Docker Hub, GHCR, ECR) and client authentication hooks so credentials can be injected via config (see `requirements/general-intro.md` guardrails on shared storage and repo types).
-
+## outstanding
 
 ## Version 0.2 – Observability & Operations
 1. **Metrics coverage:** extend storage/repo instrumentation (bytes, cache hits/misses, per-repo labels) and expose them via `/metrics` with documentation of KPI expectations.

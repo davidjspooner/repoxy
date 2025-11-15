@@ -21,6 +21,11 @@ repos:
       type: docker
       upstream:
         url: https://ghcr.io
+        auth:
+          provider: ghcr
+          config:
+            username: github-user
+            password: ghcr_pat
       mappings:
         - "davidjspooner/*"
     - name: terraform-hashicorp
