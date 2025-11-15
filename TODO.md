@@ -1,19 +1,6 @@
-## done
-- **Upstream auth plumbing:** Docker repos now read `upstream.auth` blocks (Docker Hub, GHCR, AWS ECR) and inject the proper upstream headers via the HTTP client middleware.
-
-## Version 0.1 – Harden the Core Proxy
-1. **Protocol completion:** finish Terraform/OpenTofu mirror support (well-known endpoint, metadata caching, package caching, `.terraformrc` docs) 
-2. **Protocol completion:** ensure Docker read-only flows work for Docker Hub + GHCR with - only cache blobs , other data should be fetched as needed from upstream
-## outstanding
-
-## Version 0.2 – Observability & Operations
-1. **Metrics coverage:** extend storage/repo instrumentation (bytes, cache hits/misses, per-repo labels) and expose them via `/metrics` with documentation of KPI expectations.
-2. **Logging + tracing:** ensure every HTTP path (Docker + Terraform) flows through structured logging, add correlation IDs, and document recommended log shipping pipelines.
-3. **Operational tooling:** provide admin CLIs or endpoints to inspect cache state, clear refs, and validate storage health; document runbooks in `requirements/`.
-
 ## Version 0.3 – Control Plane Surface
 1. **API requirements:** define management API contracts (read-only in MVP) for listing repos, cache entries, and metrics snapshots.
-2. **REST implementation:** build the Go handlers and authentication model for the management API, following the configuration guardrails.
+2. **REST implementation:** build the Go handlers and authentication model for the management API, following the configuration guardrails.  
 3. **UI foundation:** specify UI requirements and ship a lightweight React frontend (Material UI) that consumes the REST API for basic dashboards (status only, no writes yet).
 
 ## Version 0.4 – Alpha testing and first round rework

@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-client/pkg/client"
+	"github.com/davidjspooner/repoxy/pkg/observability"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
@@ -175,6 +177,7 @@ func (d *dockerInstance) roundTripUpstream(ctx context.Context, r *http.Request)
 		return nil, err
 	}
 	req.Header = r.Header.Clone()
+	observability.ApplyRequestIDHeader(req, observability.RequestIDFromRequest(r))
 	httpClient := d.httpClientFactory
 	var base client.Interface
 	if httpClient != nil {
@@ -183,10 +186,15 @@ func (d *dockerInstance) roundTripUpstream(ctx context.Context, r *http.Request)
 		base = &http.Client{}
 	}
 	base = d.pipeline.WrapClient(base)
+	start := time.Now()
 	resp, err := base.Do(req)
+	elapsed := time.Since(start)
+	repoType, repoName := d.repoLabels()
 	if err != nil {
+		observability.ObserveUpstreamRequest(repoType, repoName, u.Host, 0, err, elapsed)
 		return nil, err
 	}
+	observability.ObserveUpstreamRequest(repoType, repoName, u.Host, resp.StatusCode, nil, elapsed)
 	return resp, nil
 }
 
@@ -201,11 +209,14 @@ func (d *dockerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *h
 func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
 	reader, err := d.blobs.Open(r.Context(), param.digest)
 	if err != nil {
+		d.recordCacheMiss(observability.CacheBlobs)
 		return false
 	}
+	d.recordCacheHit(observability.CacheBlobs)
 	defer reader.Close()
 	if info, err := d.blobs.Stat(r.Context(), param.digest); err == nil {
 		w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
+		d.recordCacheBytes(observability.CacheBlobs, "serve", info.Size())
 	}
 	w.Header().Set("Docker-Content-Digest", param.digest)
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -215,6 +226,7 @@ func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *
 	}
 	if _, err := io.Copy(w, reader); err != nil {
 		slog.ErrorContext(r.Context(), "failed to stream cached blob", "error", err)
+		d.recordCacheError(observability.CacheBlobs)
 	}
 	return true
 }
@@ -240,6 +252,46 @@ func (d *dockerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, 
 	}
 
 	tee := io.TeeReader(resp.Body, w)
-	_, err = d.blobs.Store(ctx, param.digest, tee)
-	return err
+	n, err := d.blobs.Store(ctx, param.digest, tee)
+	if err != nil {
+		d.recordCacheError(observability.CacheBlobs)
+		return err
+	}
+	d.recordCacheBytes(observability.CacheBlobs, "store", n)
+	return nil
+}
+
+func (d *dockerInstance) repoLabels() (string, string) {
+	repoType := d.config.Type
+	if repoType == "" {
+		repoType = "docker"
+	}
+	repoName := d.config.Name
+	if repoName == "" {
+		repoName = "default"
+	}
+	return repoType, repoName
+}
+
+func (d *dockerInstance) recordCacheHit(cache string) {
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheHit(repoType, repoName, cache)
+}
+
+func (d *dockerInstance) recordCacheMiss(cache string) {
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheMiss(repoType, repoName, cache)
+}
+
+func (d *dockerInstance) recordCacheError(cache string) {
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheError(repoType, repoName, cache)
+}
+
+func (d *dockerInstance) recordCacheBytes(cache, action string, n int64) {
+	if n <= 0 {
+		return
+	}
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheBytes(repoType, repoName, cache, action, n)
 }

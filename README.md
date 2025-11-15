@@ -41,6 +41,7 @@ repoxy/
 - `requirements/general-intro.md` – project mission, terminology, coding guardrails, and expectations for contributors/agents.
 - `requirements/framework/storage-heirachy.md` – canonical layout for the shared storage root (blobs, refs, caching, GC rules).
 - `go-fs/pkg/storage/README.md` – details of the filesystem abstraction used by Repoxy.
+- `docs/observability.md` – how to consume Repoxy’s metrics and structured logs (`X-Request-ID`, cache KPIs, recommended log shipping).
 
 Consult those documents whenever you touch configuration contracts, storage behavior, or repository interfaces. They are the single source
 of truth for design decisions and should be updated alongside any substantial change.

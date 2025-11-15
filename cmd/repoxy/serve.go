@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"net/http"
 
-	"github.com/davidjspooner/go-http-server/pkg/handler"
 	"github.com/davidjspooner/go-http-server/pkg/metric"
 	"github.com/davidjspooner/go-http-server/pkg/middleware"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/go-text-cli/pkg/cmd"
+	"github.com/davidjspooner/repoxy/pkg/observability"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 
 	_ "github.com/davidjspooner/go-fs/pkg/storage/localfile"
@@ -28,7 +26,11 @@ var serveCommand = cmd.NewCommand(
 		if err != nil {
 			return fmt.Errorf("failed to load repository configurations: %w", err)
 		}
-		serveMux := mux.NewServeMux(loggerMiddleware(), metric.Middleware(), &middleware.Recovery{})
+		serveMux := mux.NewServeMux(
+			observability.HTTPLogger(),
+			metric.Middleware(),
+			&middleware.Recovery{},
+		)
 		serveMux.Handle("/metrics", metric.Handler())
 		fs, err := repo.NewStorageRoot(ctx, repoConfig.Storage)
 		if err != nil {
@@ -51,12 +53,12 @@ var serveCommand = cmd.NewCommand(
 	},
 )
 
-func loggerMiddleware() *middleware.Log {
-	return &middleware.Log{
+func loggerMiddleware() handler.Middleware {
+	logMW := &middleware.Log{
 		AfterRequest: func(ctx context.Context, r *http.Request, observed *handler.Observation) {
-
 			attrs := []any{
 				slog.String("req_id", observed.Request.ID),
+				slog.String("trace_id", observed.Request.ID),
 				slog.String("cli_id", r.RemoteAddr),
 			}
 			if observed.Request.User != "" {
@@ -96,4 +98,12 @@ func loggerMiddleware() *middleware.Log {
 			}
 		},
 	}
+	return handler.MiddlewareFunc(func(next http.Handler) http.Handler {
+		logged := logMW.WrapHandler(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			observed, r := handler.GetObservation(r)
+			r = observability.EnsureRequestID(r, w, observed)
+			logged.ServeHTTP(w, r)
+		})
+	})
 }

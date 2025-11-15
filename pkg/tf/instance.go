@@ -12,9 +12,11 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-client/pkg/client"
+	"github.com/davidjspooner/repoxy/pkg/observability"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
@@ -149,9 +151,19 @@ func (d *tfInstance) roundTripUpstream(ctx context.Context, r *http.Request) (*h
 		return nil, err
 	}
 	req.Header = r.Header.Clone()
+	observability.ApplyRequestIDHeader(req, observability.RequestIDFromRequest(r))
 	var c client.Interface = &http.Client{}
 	c = d.pipeline.WrapClient(c)
-	return c.Do(req)
+	start := time.Now()
+	resp, err := c.Do(req)
+	elapsed := time.Since(start)
+	repoType, repoName := d.repoLabels()
+	if err != nil {
+		observability.ObserveUpstreamRequest(repoType, repoName, u.Host, 0, err, elapsed)
+		return nil, err
+	}
+	observability.ObserveUpstreamRequest(repoType, repoName, u.Host, resp.StatusCode, nil, elapsed)
+	return resp, nil
 }
 
 func (d *tfInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *http.Response) {
@@ -195,16 +207,20 @@ func (d *tfInstance) serveCachedJSON(relPath string, w http.ResponseWriter, r *h
 	}
 	reader, err := d.refs.Open(r.Context(), relPath)
 	if err != nil {
+		d.recordCacheMiss(observability.CacheRefs)
 		return false
 	}
 	defer reader.Close()
 	if info, err := d.refs.Stat(r.Context(), relPath); err == nil {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", info.Size()))
+		d.recordCacheBytes(observability.CacheRefs, "serve", info.Size())
 	}
+	d.recordCacheHit(observability.CacheRefs)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.Copy(w, reader); err != nil {
 		slog.ErrorContext(r.Context(), "failed to stream cached terraform metadata", "error", err, "path", relPath)
+		d.recordCacheError(observability.CacheRefs)
 	}
 	return true
 }
@@ -230,8 +246,11 @@ func (d *tfInstance) fetchAndStoreJSON(relPath string, w http.ResponseWriter, r 
 	}
 
 	if resp.StatusCode == http.StatusOK && len(body) > 0 && d.refs != nil && relPath != "" {
-		if _, err := d.refs.Store(r.Context(), relPath, bytes.NewReader(body)); err != nil {
+		if n, err := d.refs.Store(r.Context(), relPath, bytes.NewReader(body)); err != nil {
 			slog.ErrorContext(r.Context(), "failed to persist terraform metadata", "error", err, "path", relPath)
+			d.recordCacheError(observability.CacheRefs)
+		} else {
+			d.recordCacheBytes(observability.CacheRefs, "store", n)
 		}
 	}
 	return nil
@@ -298,7 +317,8 @@ func (d *tfInstance) handleDownloadMetadata(req *downloadRequest, w http.Respons
 		return err
 	}
 	d.storeDownloadMetadata(r.Context(), req, body)
-	return d.writeDownloadMetadataResponse(payload, req, filename, w, r)
+	_, err = d.writeDownloadMetadataResponse(payload, req, filename, w, r)
+	return err
 }
 
 func (d *tfInstance) ensurePackageCached(ctx context.Context, req *downloadRequest, filename, sourceURL string) error {
@@ -309,6 +329,7 @@ func (d *tfInstance) ensurePackageCached(ctx context.Context, req *downloadReque
 	if _, err := d.packages.Stat(ctx, relPath); err == nil {
 		return nil
 	}
+	d.recordCacheMiss(observability.CachePackages)
 	if sourceURL == "" {
 		return fmt.Errorf("missing upstream download url")
 	}
@@ -326,9 +347,12 @@ func (d *tfInstance) ensurePackageCached(ctx context.Context, req *downloadReque
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download provider from upstream: %s", resp.Status)
 	}
-	if _, err := d.packages.Store(ctx, relPath, resp.Body); err != nil {
+	n, err := d.packages.Store(ctx, relPath, resp.Body)
+	if err != nil {
+		d.recordCacheError(observability.CachePackages)
 		return err
 	}
+	d.recordCacheBytes(observability.CachePackages, "store", n)
 	return nil
 }
 
@@ -343,16 +367,22 @@ func (d *tfInstance) servePackageArchive(req *downloadRequest, w http.ResponseWr
 	relPath := d.packageRelPath(req, filename)
 	reader, err := d.packages.Open(r.Context(), relPath)
 	if err != nil {
+		d.recordCacheMiss(observability.CachePackages)
 		return err
 	}
+	d.recordCacheHit(observability.CachePackages)
 	defer reader.Close()
 	if info, err := d.packages.Stat(r.Context(), relPath); err == nil {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", info.Size()))
+		d.recordCacheBytes(observability.CachePackages, "serve", info.Size())
 	}
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	w.WriteHeader(http.StatusOK)
 	_, err = io.Copy(w, reader)
+	if err != nil {
+		d.recordCacheError(observability.CachePackages)
+	}
 	return err
 }
 
@@ -434,6 +464,7 @@ func (d *tfInstance) packageRelPath(req *downloadRequest, filename string) strin
 func (d *tfInstance) serveCachedDownloadMetadata(req *downloadRequest, w http.ResponseWriter, r *http.Request) bool {
 	payload, err := d.cachedDownloadMetadataMap(r.Context(), req)
 	if err != nil {
+		d.recordCacheMiss(observability.CacheRefs)
 		return false
 	}
 	filename, err := d.resolveDownloadFilename(req, payload)
@@ -445,10 +476,14 @@ func (d *tfInstance) serveCachedDownloadMetadata(req *downloadRequest, w http.Re
 		slog.ErrorContext(r.Context(), "failed to ensure terraform package from cache", "error", err)
 		return false
 	}
-	if err := d.writeDownloadMetadataResponse(payload, req, filename, w, r); err != nil {
+	n, err := d.writeDownloadMetadataResponse(payload, req, filename, w, r)
+	if err != nil {
 		slog.ErrorContext(r.Context(), "failed to render cached metadata response", "error", err)
+		d.recordCacheError(observability.CacheRefs)
 		return false
 	}
+	d.recordCacheHit(observability.CacheRefs)
+	d.recordCacheBytes(observability.CacheRefs, "serve", int64(n))
 	return true
 }
 
@@ -466,16 +501,15 @@ func (d *tfInstance) resolveDownloadFilename(req *downloadRequest, payload map[s
 	return filename, nil
 }
 
-func (d *tfInstance) writeDownloadMetadataResponse(payload map[string]any, req *downloadRequest, filename string, w http.ResponseWriter, r *http.Request) error {
+func (d *tfInstance) writeDownloadMetadataResponse(payload map[string]any, req *downloadRequest, filename string, w http.ResponseWriter, r *http.Request) (int, error) {
 	payload["download_url"] = d.localDownloadURL(r, req, filename)
 	result, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(result)
-	return err
+	return w.Write(result)
 }
 
 func (d *tfInstance) downloadMetadataRelPath(req *downloadRequest) string {
@@ -493,8 +527,11 @@ func (d *tfInstance) storeDownloadMetadata(ctx context.Context, req *downloadReq
 	if relPath == "" {
 		return
 	}
-	if _, err := d.refs.Store(ctx, relPath, bytes.NewReader(body)); err != nil {
+	if n, err := d.refs.Store(ctx, relPath, bytes.NewReader(body)); err != nil {
 		slog.ErrorContext(ctx, "failed to store terraform download metadata", "error", err, "path", relPath)
+		d.recordCacheError(observability.CacheRefs)
+	} else {
+		d.recordCacheBytes(observability.CacheRefs, "store", n)
 	}
 }
 
@@ -551,4 +588,43 @@ func stringField(m map[string]any, key string) string {
 		}
 	}
 	return ""
+}
+
+func (d *tfInstance) repoLabels() (string, string) {
+	repoType := d.config.Type
+	if repoType == "" {
+		if d.tofu {
+			repoType = "tofu"
+		} else {
+			repoType = "terraform"
+		}
+	}
+	repoName := d.config.Name
+	if repoName == "" {
+		repoName = "default"
+	}
+	return repoType, repoName
+}
+
+func (d *tfInstance) recordCacheHit(cache string) {
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheHit(repoType, repoName, cache)
+}
+
+func (d *tfInstance) recordCacheMiss(cache string) {
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheMiss(repoType, repoName, cache)
+}
+
+func (d *tfInstance) recordCacheError(cache string) {
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheError(repoType, repoName, cache)
+}
+
+func (d *tfInstance) recordCacheBytes(cache, action string, n int64) {
+	if n <= 0 {
+		return
+	}
+	repoType, repoName := d.repoLabels()
+	observability.RecordCacheBytes(repoType, repoName, cache, action, n)
 }
