@@ -17,12 +17,13 @@ import (
 
 // dockerInstance implements the repo.Instance interface for Docker repositories.
 type dockerInstance struct {
-	factory      *factory
-	fs           storage.WritableFS
-	blobs        *repo.BlobHelper
-	config       repo.Repo
-	pipeline     client.MiddlewarePipeline
-	nameMatchers repo.NameMatchers // Matchers for repository names
+	factory           *factory
+	fs                storage.WritableFS
+	blobs             *repo.BlobHelper
+	config            repo.Repo
+	pipeline          client.MiddlewarePipeline
+	nameMatchers      repo.NameMatchers // Matchers for repository names
+	httpClientFactory func() client.Interface
 }
 
 // NewDockerInstance creates a new Docker repository instance.
@@ -36,6 +37,9 @@ func NewDockerInstance(factory *factory, fs storage.WritableFS, blobs *repo.Blob
 	}
 	instance.nameMatchers.Set(config.Mappings)
 	instance.pipeline = append(instance.pipeline, client.WithAuthentication(instance))
+	instance.httpClientFactory = func() client.Interface {
+		return &http.Client{}
+	}
 	return instance, nil
 }
 
@@ -65,9 +69,10 @@ func (d *dockerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *ht
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	// TODO : Implement the logic to handle tags requests
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle tags requests")
-	w.WriteHeader(http.StatusNotImplemented)
+	if err := d.proxyToUpstream(r.Context(), w, r); err != nil {
+		slog.ErrorContext(r.Context(), "failed to proxy docker tags request", "error", err)
+		w.WriteHeader(http.StatusBadGateway)
+	}
 }
 
 // HandleV2Manifest handles Docker V2 manifest requests. Returns a 405 for write operations.
@@ -211,9 +216,15 @@ func (d *dockerInstance) roundTripUpstream(ctx context.Context, r *http.Request)
 		return nil, err
 	}
 	req.Header = r.Header.Clone()
-	var c client.Interface = &http.Client{}
-	c = d.pipeline.WrapClient(c)
-	resp, err := c.Do(req)
+	httpClient := d.httpClientFactory
+	var base client.Interface
+	if httpClient != nil {
+		base = httpClient()
+	} else {
+		base = &http.Client{}
+	}
+	base = d.pipeline.WrapClient(base)
+	resp, err := base.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -240,6 +251,9 @@ func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *
 	w.Header().Set("Docker-Content-Digest", param.digest)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.WriteHeader(http.StatusOK)
+	if r.Method == http.MethodHead {
+		return true
+	}
 	if _, err := io.Copy(w, reader); err != nil {
 		slog.ErrorContext(r.Context(), "failed to stream cached blob", "error", err)
 	}

@@ -24,19 +24,19 @@
    ```hcl
    provider_installation {
      network_mirror {
-       url = "https://terraform.example.com/providers/"
+       url = "https://terraform.example.com"
      }
    }
    ```
 
-   The `url` must use `https://` and end with a trailing slash. Terraform resolves mirror requests using this base URL. ([opentofu.org][2], [HashiCorp Developer][1])
+   The CLI first calls `https://terraform.example.com/.well-known/terraform.json` and reads the `providers.v1` key to discover the actual `/v1/providers/` base path. ([opentofu.org][2], [HashiCorp Developer][1])
 
    #### OpenTofu example:
 
    ```hcl
    provider_installation {
      network_mirror {
-       url = "https://tofu.example.com/providers/"
+       url = "https://tofu.example.com"
      }
    }
    ```
@@ -45,7 +45,7 @@
 
 2. **URL Constructs**
 
-   Terraform/OpenTofu builds requests relative to the base URL. A request for a provider might look like:
+   After well-known discovery, Terraform/OpenTofu builds requests relative to the advertised base URL. A request for a provider might look like:
 
    ```
    https://mirror.example.com/:hostname/:namespace/:type/index.json
@@ -89,6 +89,13 @@
   ([opentofu.org][5])
 
 ---
+
+## Repoxy Implementation Notes
+
+- The `/v1/providers/...` endpoints follow the upstream registry schema and are advertised via `/.well-known/terraform.json` so Terraform/OpenTofu only need the mirror hostname in `.terraformrc`/`.tofurc`.
+- Provider metadata (`versions.json`, `manifest.json`, and per-platform download metadata) is cached in Repoxy’s `refs/` storage, so repeat inits do not hit upstream registries unless the cache is cleared.
+- Provider archives (`.zip`) are saved once under `packages/` and streamed locally on subsequent installs, matching the package caching requirement in `requirements/framework/storage-heirachy.md`.
+- Cached download metadata is rewritten on-the-fly so the client always receives a mirror-local `download_url`, even when the JSON body was fetched earlier.
 
 ### Summary (Concise)
 

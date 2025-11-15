@@ -1,6 +1,6 @@
 package docker
 
-// param represents a reference to a Terraform provider by namespace and name.
+// param represents the parsed pieces of a Docker registry request.
 type param struct {
 	name   string
 	tag    string

@@ -1,7 +1,8 @@
 ## Version 0.1 – Harden the Core Proxy
-1. **Protocol completion:** finish Terraform/OpenTofu mirror support (well-known endpoint, metadata caching, package caching, `.terraformrc` docs) and ensure Docker read-only flows work for Docker Hub + GHCR with caching semantics described in `requirements/framework/storage-heirachy.md`.
-2. **Upstream Auth plumbing:** add upstream auth configuration (Docker Hub, GHCR, ECR) and client authentication hooks so credentials can be injected via config (see `requirements/general-intro.md` guardrails on shared storage and repo types).
-3. **Config + docs:** document the updated YAML schema (`conf/repoxy.yaml`) and write operational guidance in `requirements/` for running the proxy in read-only pull-through mode.
+1. **Protocol completion:** finish Terraform/OpenTofu mirror support (well-known endpoint, metadata caching, package caching, `.terraformrc` docs) 
+2. **Protocol completion:** ensure Docker read-only flows work for Docker Hub + GHCR with - only cache blobs , other data should be fetched as needed from upstream
+3. **Upstream Auth plumbing:** add upstream auth configuration for containers (Docker Hub, GHCR, ECR) and client authentication hooks so credentials can be injected via config (see `requirements/general-intro.md` guardrails on shared storage and repo types).
+
 
 ## Version 0.2 – Observability & Operations
 1. **Metrics coverage:** extend storage/repo instrumentation (bytes, cache hits/misses, per-repo labels) and expose them via `/metrics` with documentation of KPI expectations.

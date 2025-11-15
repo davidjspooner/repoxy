@@ -106,6 +106,9 @@ func (d *tfInstance) HandleV1VersionDownload(param *param, w http.ResponseWriter
 		}
 		return
 	}
+	if d.serveCachedDownloadMetadata(downloadReq, w, r) {
+		return
+	}
 	if err := d.handleDownloadMetadata(downloadReq, w, r); err != nil {
 		slog.ErrorContext(r.Context(), "failed to build terraform download metadata", "error", err)
 		http.Error(w, "failed to prepare download metadata", http.StatusBadGateway)
@@ -287,29 +290,15 @@ func (d *tfInstance) handleDownloadMetadata(req *downloadRequest, w http.Respons
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return err
 	}
-	sourceURL := stringField(payload, "download_url")
-	filename := req.Filename
-	if filename == "" {
-		filename = stringField(payload, "filename")
-	}
-	if filename == "" {
-		filename = filepath.Base(sourceURL)
-	}
-	if filename == "" {
-		return fmt.Errorf("missing filename in upstream response")
-	}
-	if err := d.ensurePackageCached(r.Context(), req, filename, sourceURL); err != nil {
-		return err
-	}
-	payload["download_url"] = d.localDownloadURL(r, req, filename)
-	result, err := json.Marshal(payload)
+	filename, err := d.resolveDownloadFilename(req, payload)
 	if err != nil {
 		return err
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(result)
-	return err
+	if err := d.ensurePackageCachedFromMetadata(r.Context(), req, filename, payload); err != nil {
+		return err
+	}
+	d.storeDownloadMetadata(r.Context(), req, body)
+	return d.writeDownloadMetadataResponse(payload, req, filename, w, r)
 }
 
 func (d *tfInstance) ensurePackageCached(ctx context.Context, req *downloadRequest, filename, sourceURL string) error {
@@ -372,21 +361,26 @@ func (d *tfInstance) ensurePackagePresence(ctx context.Context, req *downloadReq
 	if _, err := d.packages.Stat(ctx, relPath); err == nil {
 		return nil
 	}
-	payload, err := d.fetchDownloadMetadataMap(ctx, req)
+	payload, err := d.loadOrFetchDownloadMetadataMap(ctx, req)
 	if err != nil {
 		return err
 	}
-	sourceURL := stringField(payload, "download_url")
-	if filename == "" {
-		filename = stringField(payload, "filename")
-		if filename == "" {
-			filename = filepath.Base(sourceURL)
-		}
-	}
-	return d.ensurePackageCached(ctx, req, filename, sourceURL)
+	return d.ensurePackageCachedFromMetadata(ctx, req, filename, payload)
 }
 
 func (d *tfInstance) fetchDownloadMetadataMap(ctx context.Context, req *downloadRequest) (map[string]any, error) {
+	body, err := d.fetchDownloadMetadataBytes(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	payload := make(map[string]any)
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func (d *tfInstance) fetchDownloadMetadataBytes(ctx context.Context, req *downloadRequest) ([]byte, error) {
 	if req == nil {
 		return nil, fmt.Errorf("invalid download request")
 	}
@@ -410,11 +404,8 @@ func (d *tfInstance) fetchDownloadMetadataMap(ctx context.Context, req *download
 	if err != nil {
 		return nil, err
 	}
-	payload := make(map[string]any)
-	if err := json.Unmarshal(body, &payload); err != nil {
-		return nil, err
-	}
-	return payload, nil
+	d.storeDownloadMetadata(ctx, req, body)
+	return body, nil
 }
 
 func (d *tfInstance) localDownloadURL(r *http.Request, req *downloadRequest, filename string) string {
@@ -438,6 +429,119 @@ func (d *tfInstance) packageRelPath(req *downloadRequest, filename string) strin
 		safe = "package.zip"
 	}
 	return path.Join("providers", req.param.namespace, req.param.name, req.param.version, req.OS, req.Arch, safe)
+}
+
+func (d *tfInstance) serveCachedDownloadMetadata(req *downloadRequest, w http.ResponseWriter, r *http.Request) bool {
+	payload, err := d.cachedDownloadMetadataMap(r.Context(), req)
+	if err != nil {
+		return false
+	}
+	filename, err := d.resolveDownloadFilename(req, payload)
+	if err != nil {
+		slog.WarnContext(r.Context(), "cached metadata missing filename", "error", err)
+		return false
+	}
+	if err := d.ensurePackageCachedFromMetadata(r.Context(), req, filename, payload); err != nil {
+		slog.ErrorContext(r.Context(), "failed to ensure terraform package from cache", "error", err)
+		return false
+	}
+	if err := d.writeDownloadMetadataResponse(payload, req, filename, w, r); err != nil {
+		slog.ErrorContext(r.Context(), "failed to render cached metadata response", "error", err)
+		return false
+	}
+	return true
+}
+
+func (d *tfInstance) resolveDownloadFilename(req *downloadRequest, payload map[string]any) (string, error) {
+	filename := req.Filename
+	if filename == "" {
+		filename = stringField(payload, "filename")
+	}
+	if filename == "" {
+		filename = filepath.Base(stringField(payload, "download_url"))
+	}
+	if filename == "" {
+		return "", fmt.Errorf("missing filename in upstream response")
+	}
+	return filename, nil
+}
+
+func (d *tfInstance) writeDownloadMetadataResponse(payload map[string]any, req *downloadRequest, filename string, w http.ResponseWriter, r *http.Request) error {
+	payload["download_url"] = d.localDownloadURL(r, req, filename)
+	result, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(result)
+	return err
+}
+
+func (d *tfInstance) downloadMetadataRelPath(req *downloadRequest) string {
+	if req == nil || req.param == nil {
+		return ""
+	}
+	return path.Join("providers", req.param.namespace, req.param.name, req.param.version, "download", req.OS, fmt.Sprintf("%s.json", req.Arch))
+}
+
+func (d *tfInstance) storeDownloadMetadata(ctx context.Context, req *downloadRequest, body []byte) {
+	if d.refs == nil || len(body) == 0 {
+		return
+	}
+	relPath := d.downloadMetadataRelPath(req)
+	if relPath == "" {
+		return
+	}
+	if _, err := d.refs.Store(ctx, relPath, bytes.NewReader(body)); err != nil {
+		slog.ErrorContext(ctx, "failed to store terraform download metadata", "error", err, "path", relPath)
+	}
+}
+
+func (d *tfInstance) cachedDownloadMetadataMap(ctx context.Context, req *downloadRequest) (map[string]any, error) {
+	if d.refs == nil {
+		return nil, fmt.Errorf("metadata cache unavailable")
+	}
+	relPath := d.downloadMetadataRelPath(req)
+	if relPath == "" {
+		return nil, fmt.Errorf("invalid metadata cache path")
+	}
+	reader, err := d.refs.Open(ctx, relPath)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	payload := make(map[string]any)
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func (d *tfInstance) loadOrFetchDownloadMetadataMap(ctx context.Context, req *downloadRequest) (map[string]any, error) {
+	if payload, err := d.cachedDownloadMetadataMap(ctx, req); err == nil {
+		return payload, nil
+	}
+	return d.fetchDownloadMetadataMap(ctx, req)
+}
+
+func (d *tfInstance) ensurePackageCachedFromMetadata(ctx context.Context, req *downloadRequest, filename string, payload map[string]any) error {
+	sourceURL := stringField(payload, "download_url")
+	resolved := filename
+	if resolved == "" {
+		resolved = stringField(payload, "filename")
+		if resolved == "" {
+			resolved = filepath.Base(sourceURL)
+		}
+	}
+	if resolved == "" {
+		return fmt.Errorf("missing filename in upstream response")
+	}
+	return d.ensurePackageCached(ctx, req, resolved, sourceURL)
 }
 
 func stringField(m map[string]any, key string) string {

@@ -30,7 +30,7 @@ repos:
       mappings:
         - "hashicorp/*"
     - name: opentofu-registry
-      type: tofo
+      type: tofu
       upstream:
         url: https://registry.opentofu.org
       mappings:

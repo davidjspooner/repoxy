@@ -77,6 +77,7 @@ Different proxies may connect to the same backend with separate authentication t
 For example, multiple proxies might each map to Docker Hub or GHCR while using distinct credentials.
 
 All proxies of a given artifact type share that type’s blob store (`type/<type>/blobs/`) to enable deduplication and efficient reuse.
+Today the Docker implementation intentionally limits persistence to this shared blob store; manifests, tags, and catalog responses are always streamed directly from the upstream registry so read-only mirrors never cache mutable metadata.
 
 ---
 

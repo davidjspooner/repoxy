@@ -207,3 +207,67 @@ func TestHandleV1VersionDownloadCachesPackage(t *testing.T) {
 		t.Fatalf("expected single metadata fetch, got %d", metadataHits)
 	}
 }
+
+func TestHandleV1DownloadMetadataCachesResponse(t *testing.T) {
+	t.Parallel()
+	const (
+		namespace = "hashicorp"
+		name      = "aws"
+		version   = "4.0.0"
+		osName    = "darwin"
+		arch      = "arm64"
+		filename  = "terraform-provider-aws_4.0.0_darwin_arm64.zip"
+	)
+	var (
+		metadataHits int
+		packageHits  int
+		payload      = []byte("zip-bits")
+	)
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case fmt.Sprintf("/v1/providers/%s/%s/%s/download/%s/%s", namespace, name, version, osName, arch):
+			metadataHits++
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"download_url": "%s/artifact.zip","filename":"%s"}`, srv.URL, filename)
+		case "/artifact.zip":
+			packageHits++
+			w.Write(payload)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	inst := newTFInstanceForTest(t, srv.URL)
+	param := &param{
+		namespace: namespace,
+		name:      name,
+		version:   version,
+		tail:      fmt.Sprintf("download/%s/%s", osName, arch),
+	}
+
+	for i := 0; i < 2; i++ {
+		request := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/v1/providers/%s/%s/%s/download/%s/%s", namespace, name, version, osName, arch), nil)
+		request.Host = "proxy.test"
+		rec := httptest.NewRecorder()
+		inst.HandleV1VersionDownload(param, rec, request)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("iteration %d: expected 200, got %d", i, rec.Code)
+		}
+		var metadata map[string]string
+		if err := json.Unmarshal(rec.Body.Bytes(), &metadata); err != nil {
+			t.Fatalf("iteration %d: failed to decode metadata: %v", i, err)
+		}
+		expectedURL := fmt.Sprintf("http://proxy.test/v1/providers/%s/%s/%s/download/%s/%s/archive/%s", namespace, name, version, osName, arch, filename)
+		if metadata["download_url"] != expectedURL {
+			t.Fatalf("iteration %d: expected rewritten download url %s, got %s", i, expectedURL, metadata["download_url"])
+		}
+	}
+	if metadataHits != 1 {
+		t.Fatalf("expected metadata upstream once, got %d", metadataHits)
+	}
+	if packageHits != 1 {
+		t.Fatalf("expected package upstream once, got %d", packageHits)
+	}
+}

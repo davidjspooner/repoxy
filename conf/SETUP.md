@@ -78,7 +78,7 @@ The `terraform-hashicorp` repo mirrors `https://registry.terraform.io` under `/v
    ```hcl
    provider_installation {
      network_mirror {
-       url = "https://repoxy.example.com/providers/"
+       url = "https://repoxy.example.com"
      }
      direct {
        exclude = ["registry.terraform.io/hashicorp/*"]
@@ -86,7 +86,8 @@ The `terraform-hashicorp` repo mirrors `https://registry.terraform.io` under `/v
    }
    ```
 
-   - The mirror URL must be HTTPS and end with a trailing slash.
+   - Terraform automatically requests `https://repoxy.example.com/.well-known/terraform.json` and follows the `providers.v1` URL (Repoxy responds with `/v1/providers/`), so no manual path rewriting is required.
+   - The mirror URL must be HTTPS. Repoxy redirects clients to `/v1/providers/*` internally; you only need to point Terraform at the origin hostname.
    - The `direct` block excludes the namespaces handled by the mirror, ensuring Terraform does not fall back to the public registry for those providers.
 
 2. Test with `terraform init` inside any project that depends on HashiCorp providers.
@@ -102,7 +103,7 @@ The `opentofu-registry` repo proxies `https://registry.opentofu.org` for the nam
 ```hcl
 provider_installation {
   network_mirror {
-    url = "https://repoxy.example.com/providers/"
+    url = "https://repoxy.example.com"
   }
   direct {
     exclude = ["registry.opentofu.org/opentofu/*"]
@@ -110,7 +111,7 @@ provider_installation {
 }
 ```
 
-Run `tofu init` to verify provider downloads use the mirror. OpenTofu shares the same mirror semantics as Terraform, so the configuration is nearly identical.
+Run `tofu init` to verify provider downloads use the mirror. OpenTofu performs the same `.well-known/terraform.json` discovery flow, so the configuration is nearly identical.
 
 ---
 

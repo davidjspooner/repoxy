@@ -24,7 +24,7 @@ type tfType struct {
 
 // init registers the Terraform and Tofu factories.
 func init() {
-	repo.MustRegisterType("terraform|tofo", &tfType{})
+	repo.MustRegisterType("terraform|tofu", &tfType{})
 }
 
 // Ensure factory implements repo.Type.
@@ -60,7 +60,7 @@ func (f *tfType) NewRepository(ctx context.Context, config *repo.Repo) (repo.Ins
 		return nil, err
 	}
 	f.instances = append(f.instances, instance)
-	if config.Type == "tofo" {
+	if config.Type == "tofu" {
 		instance.tofu = true // Set tofu flag for Tofu instances
 	} else {
 		instance.tofu = false // Set tofu flag for Terraform instances
