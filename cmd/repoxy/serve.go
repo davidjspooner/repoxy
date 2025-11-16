@@ -12,6 +12,7 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 
 	_ "github.com/davidjspooner/go-fs/pkg/storage/localfile"
+	_ "github.com/davidjspooner/go-fs/pkg/storage/s3bucket"
 )
 
 type ServeOptions struct {
@@ -52,58 +53,3 @@ var serveCommand = cmd.NewCommand(
 		Config: "config.yaml",
 	},
 )
-
-func loggerMiddleware() handler.Middleware {
-	logMW := &middleware.Log{
-		AfterRequest: func(ctx context.Context, r *http.Request, observed *handler.Observation) {
-			attrs := []any{
-				slog.String("req_id", observed.Request.ID),
-				slog.String("trace_id", observed.Request.ID),
-				slog.String("cli_id", r.RemoteAddr),
-			}
-			if observed.Request.User != "" {
-				attrs = append(attrs, slog.String("user", observed.Request.User))
-			}
-			attrs = append(attrs,
-				slog.String("method", r.Method),
-				slog.String("url", r.URL.String()),
-			)
-			if observed.Request.Body.Length > 0 {
-				attrs = append(attrs, slog.Int("req_len", observed.Request.Body.Length))
-			}
-			attrs = append(attrs,
-				slog.Int("status", observed.Response.Status),
-				slog.Float64("duration", observed.Response.Duration.Seconds()),
-			)
-			if observed.Response.Body.Length > 0 {
-				attrs = append(attrs, slog.Int("resp_len", observed.Response.Body.Length))
-			}
-
-			if observed.RoutePattern != "" {
-				attrs = append(attrs, slog.String("route", observed.RoutePattern))
-			}
-
-			statusType := observed.Response.Status / 100
-			switch statusType {
-			case 1, 2: //1xx, 2xx
-				slog.InfoContext(ctx, "request completed", attrs...)
-			case 3: //3xx
-				slog.InfoContext(ctx, "request redirected", attrs...)
-			case 4: //4xx
-				slog.WarnContext(ctx, "client error", attrs...)
-			case 5: //5xx
-				slog.ErrorContext(ctx, "server error", attrs...)
-			default: //other
-				slog.ErrorContext(ctx, "unexpected status", attrs...)
-			}
-		},
-	}
-	return handler.MiddlewareFunc(func(next http.Handler) http.Handler {
-		logged := logMW.WrapHandler(next)
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			observed, r := handler.GetObservation(r)
-			r = observability.EnsureRequestID(r, w, observed)
-			logged.ServeHTTP(w, r)
-		})
-	})
-}

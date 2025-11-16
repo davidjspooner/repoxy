@@ -65,13 +65,13 @@ func HTTPLogger() handler.Middleware {
 		logged := logMW.WrapHandler(next)
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			observed, r := handler.GetObservation(r)
-			r = ensureRequestID(r, w, observed)
+			r = EnsureRequestID(r, w, observed)
 			logged.ServeHTTP(w, r)
 		})
 	})
 }
 
-func ensureRequestID(r *http.Request, w http.ResponseWriter, observation *handler.Observation) *http.Request {
+func EnsureRequestID(r *http.Request, w http.ResponseWriter, observation *handler.Observation) *http.Request {
 	if observation == nil {
 		var obs *handler.Observation
 		obs, r = handler.GetObservation(r)
