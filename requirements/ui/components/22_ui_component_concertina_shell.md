@@ -9,6 +9,7 @@ The **core layout/flow controller** for panels.
 - Render **one or two panels** at a time depending on viewport width.
 - Provide **breadcrumbs** for navigation.
 - Host panel containers and the draggable divider.
+- Display the **Connection Status modal overlay** when instructed (e.g. on live-update disconnects).
 
 ## Structure
 
@@ -61,4 +62,7 @@ Threshold for determining “wide” vs “narrow” is implementation-specific.
   - Shell pops the affected panel(s) and re-renders using the remaining stack.
 - If updates affect non-current panels (e.g. repository list changes while user is deep in a folder):
   - Shell determines whether to refresh those panels when they are next displayed.
-
+- If the Live Update Subscription reports a lost connection (no offline mode):
+  - Shell renders a **modal overlay** (blocking panel interaction) showing the countdown supplied by the subscription logic and a **Retry Now** button.
+  - Automatic retries follow the exponential/backoff rules until capped at two minutes, after which they continue at two-minute intervals.
+  - The overlay is dismissed automatically once reconnection succeeds; users cannot interact with panels while it is visible.

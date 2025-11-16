@@ -31,7 +31,7 @@ Only types that actually have **data** are shown in the MVP.
 
 ## Interaction
 
-- Click (or double-click, depending on final UX decision) on a tile:
+- **Single click** (or tap) on a tile:
   - Tells the Concertina Shell to push a **Repository Browser** panel for that type.
   - The new panel becomes the **right-hand** panel.
 - On desktop:

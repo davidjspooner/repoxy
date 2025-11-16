@@ -3,7 +3,8 @@
 
 Displays a **folder-only tree** for a repository’s contents.  
 When scoped to a repository type, the **root-level nodes represent repository names** returned by the backend (e.g. entries from `repos` in `repoxy/conf/repoxy.yaml`).  
-Folder depth beneath each repo is type-specific, but the tree enforces a convention that files only appear at the leaves (a folder either has child folders or files, not both).
+Under each repository instance the UI assumes a fixed folder hierarchy: `host` → `group` → `name`.  
+Only `name` folders correspond to actual collections of files; higher levels contain folders only.
 
 ## Responsibilities
 

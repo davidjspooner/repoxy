@@ -8,6 +8,7 @@ A tabular view of files in the currently selected folder.
 - Display files and basic metadata.
 - Provide sorting within the current folder.
 - Allow selecting a file to open File Details.
+- Assume folder contents are **small enough** to render in one table for MVP; pagination and filtering are deferred to post-MVP.
 
 ## Columns (MVP)
 

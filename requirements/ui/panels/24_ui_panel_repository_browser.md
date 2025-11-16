@@ -25,14 +25,18 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
      Example using `repoxy/conf/repoxy.yaml`:
        - Selecting the Docker tile shows `dockerhub` and `github` as the first expandable nodes.
        - Selecting the Terraform tile shows `terraform-hashicorp`; OpenTofu shows `opentofu-registry`.
-   - Folder depth beneath each repo is **type specific**, but each folder either contains more folders **or** files—not both; files exist only at the leaves.
+   - Each repository instance exposes three mandatory folder levels beneath it:
+     1. `host`
+     2. `group`
+     3. `name`
+   - Folders at the `host` and `group` levels only contain subfolders; `name` folders contain files (and no further folders).
    - No file nodes appear in the tree.
    - Behaves like a typical file system tree:
      - Expand/collapse folders.
      - Click selects a folder.
 
 2. **Right Column – File List (FileListTable component)**  
-   - Displays files within the **currently selected folder**.
+   - Displays files within the **currently selected `name` folder**.
    - Tabular layout with sortable headers:
      - File name.
      - Last modified date.

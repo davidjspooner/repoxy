@@ -3,7 +3,8 @@
 
 This file explicitly lists features that are **known future enhancements** and must **not** be implemented in the MVP.  
 UI elements for these features may appear **disabled** to hint at future capabilities.  
-Specific behaviours, layouts, and data flows referenced here are often **TBD**; detailed definitions are intentionally deferred until after the MVP when priorities are clearer.
+Specific behaviours, layouts, and data flows referenced here are often **TBD**; detailed definitions are intentionally deferred until after the MVP when priorities are clearer.  
+Entries marked **TBD** are placeholders to capture ideas only—they do **not** require design, estimation, or implementation work until post-MVP planning explicitly prioritises them.
 
 ---
 

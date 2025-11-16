@@ -35,7 +35,7 @@ A modal dialog for **personalisation and basic UI settings**.
 - Footer of the dialog:
   - A single “Close” button (or equivalent) plus an optional close icon.
   - Settings apply **live** as soon as the user toggles a control; there are **no Save/Apply buttons**.
-  - All settings changes are persisted to **localStorage** immediately.
+  - All settings changes are persisted to **localStorage** immediately (with a **cookie fallback** if localStorage is unavailable).
   - Default values when no local settings exist:
     - Theme: **Light**
     - Density: **Comfortable**
@@ -56,5 +56,5 @@ A modal dialog for **personalisation and basic UI settings**.
 - **Error**
   - Only relevant if persistence of settings fails (e.g. unable to save to storage).
   - If that happens:
-    - Inline error in the dialog.
-    - Red toast summarising the problem.
+      - Inline error in the dialog.
+      - Red toast summarising the problem.

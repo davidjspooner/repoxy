@@ -49,7 +49,6 @@ From top to bottom, the screen is structured as:
 3. **Footer Summary Bar**  
    - Fixed at the bottom.
    - Shows a **very brief summary** of the currently selected item (repository, folder, or file) along with its **last updated timestamp** reported by the backend.
-   - If the UI loses its live-update connection, the footer suffixes the summary with ` (disconnected)` until connectivity is restored.
    - Distinct from the detailed information shown in the right-hand detail panel.
 
 ### Desktop vs Mobile
@@ -80,8 +79,12 @@ At a conceptual level, the navigation stack is:
 
 2. **Repository Browser Panel** (per repository type)  
    - Left side: **Folder Tree View** whose **top-level nodes are repository names** within the chosen type (for the example config: `dockerhub`, `github`, `terraform-hashicorp`, `opentofu-registry`).  
-   - The depth and naming of folders under each repo instance are **type specific**, but files only appear in **leaf folders** (no folder contains both files and child folders).
-   - Right side: **File List Table** (files in the selected folder).
+   - Each repository instance has three **fixed levels** beneath it before files appear:
+     1. `host`
+     2. `group`
+     3. `name`
+   - Only the `name` folders contain files; higher levels contain folders only.
+   - Right side: **File List Table** (files in the selected `name` folder).
 
 3. **File Details Panel**  
    - Detailed view for a single selected file.
@@ -109,6 +112,13 @@ The UI assumes a **long-running connection** to the backend (e.g. WebSocket, SSE
   The UI:
   - Treats notifications as authoritative for knowing when to refresh a panel.
   - Does **not** define the exact versioning scheme; that’s a backend concern.
+
+If the long-running connection is lost:
+- There is **no offline mode**. The UI cannot be used until connectivity returns.
+- The Concertina Shell displays a **modal dialog overlay** (blocking interaction) describing the connection loss.
+- The dialog shows a countdown to the next automatic retry, following an exponential sequence until it hits a **2-minute ceiling**; after reaching that ceiling it continues retrying every 2 minutes until the web app reconnects or the browser tab is closed.
+- The countdown updates each second; a prominent **“Retry Now”** button lets the user trigger an immediate attempt (which also resets the backoff sequence).
+- Once a retry succeeds the modal is dismissed automatically and the UI resumes normal behaviour.
 
 If an error occurs during refresh (e.g. a 500 from the backend), a **toast notification** is displayed (see below).
 
