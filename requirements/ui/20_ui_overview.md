@@ -5,6 +5,8 @@ This document describes the **MVP user interface** for the Repoxy application, b
 
 Repoxy is a web UI for **browsing repository data cached by the backend** (e.g. Docker registries, Terraform/OpenTofu providers and modules, PyPI indexes, Debian APT repositories).  
 
+The webapp used react / nod and matrial UI
+
 For the **MVP**, the UI is **read-only navigation**:
 
 - No creation, deletion, or modification of repositories or files.
