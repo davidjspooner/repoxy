@@ -11,7 +11,7 @@ For the **MVP**, the UI is **read-only navigation**:
 - No login/logout flow (single implicit admin user).
 - No download or clean-up actions.
 
-Those actions are explicitly **post-MVP** and are documented in `20_UI_post_mvp.md`.
+Those actions are explicitly **post-MVP** and are documented in `28_ui_post_mvp.md`.
 
 ---
 
@@ -146,33 +146,33 @@ At MVP:
 - There is a single implicit user (`admin`).
 - Account and logout menu entries are visible but **disabled/greyed** to telegraph future capabilities.
 
-Details of the settings dialog are in `20_UI_panel_settings_dialog.md` and the corresponding component spec.
+Details of the settings dialog are in `panels/24_ui_panel_settings_dialog.md` and the corresponding component spec.
 
 ---
 
 ## Documents in This UI Spec
 
-- `20_UI_overview.md` — this file.
-- `20_UI_panels.md` — panel catalogue and navigation relationships.
-- `20_UI_panel_root.md` — the root state (effectively repository types).
-- `20_UI_panel_repository_types.md` — panel showing repository type tiles.
-- `20_UI_panel_repository_browser.md` — panel for folder tree + file list per repo type.
-- `20_UI_panel_file_details.md` — panel for viewing file metadata.
-- `20_UI_panel_settings_dialog.md` — modal settings panel.
-- `20_UI_component_header_bar.md`
-- `20_UI_component_concertina_shell.md`
-- `20_UI_component_breadcrumbs.md`
-- `20_UI_component_panel_container.md`
-- `20_UI_component_repo_type_tile.md`
-- `20_UI_component_tile_grid.md`
-- `20_UI_component_folder_tree_view.md`
-- `20_UI_component_file_list_table.md`
-- `20_UI_component_footer_summary_bar.md`
-- `20_UI_component_toast.md`
-- `20_UI_component_toast_queue.md`
-- `20_UI_component_settings_dialog.md`
-- `20_UI_component_draggable_divider.md`
-- `20_UI_component_live_update_subscription.md`
-- `20_UI_post_mvp.md` — post-MVP UI roadmap and out-of-scope features.
+- `20_ui_overview.md` — this file.
+- `20_ui_panels.md` — panel catalogue and navigation relationships.
+- `panels/24_ui_panel_root.md` — the root state (effectively repository types).
+- `panels/24_ui_panel_repository_types.md` — panel showing repository type tiles.
+- `panels/24_ui_panel_repository_browser.md` — panel for folder tree + file list per repo type.
+- `panels/24_ui_panel_file_details.md` — panel for viewing file metadata.
+- `panels/24_ui_panel_settings_dialog.md` — modal settings panel.
+- `components/22_ui_component_header_bar.md`
+- `components/22_ui_component_concertina_shell.md`
+- `components/22_ui_component_breadcrumbs.md`
+- `components/22_ui_component_panel_container.md`
+- `components/22_ui_component_repo_type_tile.md`
+- `components/22_ui_component_tile_grid.md`
+- `components/22_ui_component_folder_tree_view.md`
+- `components/22_ui_component_file_list_table.md`
+- `components/22_ui_component_footer_summary_bar.md`
+- `components/22_ui_component_toast.md`
+- `components/22_ui_component_toast_queue.md`
+- `components/22_ui_component_settings_dialog.md`
+- `components/22_ui_component_draggable_divider.md`
+- `components/22_ui_component_live_update_subscription.md`
+- `28_ui_post_mvp.md` — post-MVP UI roadmap and out-of-scope features.
 
 These markdown files should be sufficient for another LLM or engineer to implement the UI without needing to repeat this interview.

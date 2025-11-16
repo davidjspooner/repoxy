@@ -22,7 +22,7 @@ Only types that actually have **data** are shown in the MVP.
 
 ## Layout & Contents
 
-- Main content is a **grid or list of tiles**, each rendered via the `RepoTypeTile` component (`20_UI_component_repo_type_tile.md`).
+- Main content is a **grid or list of tiles**, each rendered via the `RepoTypeTile` component (`../components/22_ui_component_repo_type_tile.md`).
 - Each tile contains:
   - Repository type name (e.g. "Docker", "PyPI").
   - Optionally a short description or example (non-essential for MVP).
@@ -55,4 +55,3 @@ Only types that actually have **data** are shown in the MVP.
 
 - **Populated:**  
   - Normal tile grid.
-

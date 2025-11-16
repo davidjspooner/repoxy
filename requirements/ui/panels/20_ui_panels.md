@@ -2,17 +2,17 @@
 # Panel Catalogue & Navigation
 
 This document describes each **panel** (screen/major view) and how they connect.  
-Panel stacking behaviour and transitions are handled by the **Concertina Shell** (see `20_UI_component_concertina_shell.md`) and **not** by individual panels.
+Panel stacking behaviour and transitions are handled by the **Concertina Shell** (see `components/22_ui_component_concertina_shell.md`) and **not** by individual panels.
 
 ---
 
 ## Panel List (MVP)
 
-1. **Repository Types Panel** (`20_UI_panel_repository_types.md`)
-2. **Repository Browser Panel** (`20_UI_panel_repository_browser.md`)
-3. **File Details Panel** (`20_UI_panel_file_details.md`)
-4. **Settings Dialog Panel** (`20_UI_panel_settings_dialog.md`)
-5. **Root Panel** (`20_UI_panel_root.md`) — conceptual root; in practice this is the same as Repository Types.
+1. **Repository Types Panel** (`panels/24_ui_panel_repository_types.md`)
+2. **Repository Browser Panel** (`panels/24_ui_panel_repository_browser.md`)
+3. **File Details Panel** (`panels/24_ui_panel_file_details.md`)
+4. **Settings Dialog Panel** (`panels/24_ui_panel_settings_dialog.md`)
+5. **Root Panel** (`panels/24_ui_panel_root.md`) — conceptual root; in practice this is the same as Repository Types.
 
 ---
 
@@ -80,4 +80,3 @@ Each panel supports the following states:
   - Primary, normal state with data visible.
 
 The specific treatment of these states is described in each panel’s markdown.
-

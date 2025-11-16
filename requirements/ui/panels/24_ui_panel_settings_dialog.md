@@ -11,7 +11,7 @@ A modal dialog for **personalisation and basic UI settings**.
 
 ## Invocation
 
-- Triggered from the **user menu** in the Header Bar (see `20_UI_component_header_bar.md`).
+- Triggered from the **user menu** in the Header Bar (see `../components/22_ui_component_header_bar.md`).
 - Option name: likely “Settings” or “Preferences”.
 
 ## Layout
@@ -55,4 +55,3 @@ A modal dialog for **personalisation and basic UI settings**.
   - If that happens:
     - Inline error in the dialog.
     - Red toast summarising the problem.
-
