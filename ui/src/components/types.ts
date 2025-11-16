@@ -17,6 +17,7 @@ export interface FolderNode {
   id: string;
   name: string;
   children?: FolderNode[];
+  meta?: Record<string, unknown>;
 }
 
 export interface FileRow {
@@ -24,6 +25,7 @@ export interface FileRow {
   name: string;
   modified: string;
   sizeBytes: number;
+  path?: string;
 }
 
 export interface ToastMessage {

@@ -1,0 +1,227 @@
+export interface SampleFile {
+  file: string;
+  path: string;
+  size_bytes: number;
+  modified: string;
+  content_type: string;
+  checksums: {
+    sha256: string;
+  };
+  download_count: number;
+  last_accessed: string;
+}
+
+export interface SampleNameEntry {
+  name: string;
+  last_updated: string;
+  files: SampleFile[];
+}
+
+export interface SampleGroup {
+  group: string;
+  last_updated: string;
+  names: SampleNameEntry[];
+}
+
+export interface SampleHost {
+  host: string;
+  last_updated: string;
+  groups: SampleGroup[];
+}
+
+export interface SampleRepo {
+  name: string;
+  display_name: string;
+  hosts: SampleHost[];
+}
+
+export interface SampleRepoType {
+  type: string;
+  label: string;
+  description: string;
+  repos: SampleRepo[];
+}
+
+export interface SampleData {
+  repository_types: SampleRepoType[];
+  toasts: { id: string; level: 'success' | 'error' | 'info'; message: string }[];
+}
+
+export const sampleData: SampleData = {
+  repository_types: [
+    {
+      type: 'docker',
+      label: 'Docker / OCI',
+      description: 'Container images mirrored from upstream registries.',
+      repos: [
+        {
+          name: 'dockerhub',
+          display_name: 'Docker Hub',
+          hosts: [
+            {
+              host: 'registry-1.docker.io',
+              last_updated: '2025-05-18T10:12:03Z',
+              groups: [
+                {
+                  group: 'library',
+                  last_updated: '2025-05-18T10:11:00Z',
+                  names: [
+                    {
+                      name: 'nginx',
+                      last_updated: '2025-05-18T10:10:45Z',
+                      files: [
+                        {
+                          file: 'manifest.json',
+                          path: 'docker/dockerhub/library/nginx/manifest.json',
+                          size_bytes: 812,
+                          modified: '2025-05-18T10:10:44Z',
+                          content_type: 'application/vnd.oci.image.manifest.v1+json',
+                          checksums: {
+                            sha256: '1111111111111111111111111111111111111111111111111111111111111111',
+                          },
+                          download_count: 42,
+                          last_accessed: '2025-05-18T10:55:00Z',
+                        },
+                        {
+                          file: 'config.json',
+                          path: 'docker/dockerhub/library/nginx/config.json',
+                          size_bytes: 2048,
+                          modified: '2025-05-18T10:10:40Z',
+                          content_type: 'application/json',
+                          checksums: {
+                            sha256: '2222222222222222222222222222222222222222222222222222222222222222',
+                          },
+                          download_count: 37,
+                          last_accessed: '2025-05-18T10:48:12Z',
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  group: 'redis',
+                  last_updated: '2025-05-17T19:30:00Z',
+                  names: [
+                    {
+                      name: 'alpine',
+                      last_updated: '2025-05-17T19:29:10Z',
+                      files: [
+                        {
+                          file: 'manifest.json',
+                          path: 'docker/dockerhub/redis/alpine/manifest.json',
+                          size_bytes: 756,
+                          modified: '2025-05-17T19:29:09Z',
+                          content_type: 'application/vnd.oci.image.manifest.v1+json',
+                          checksums: {
+                            sha256: '3333333333333333333333333333333333333333333333333333333333333333',
+                          },
+                          download_count: 12,
+                          last_accessed: '2025-05-18T09:14:02Z',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: 'github',
+          display_name: 'GitHub CR',
+          hosts: [
+            {
+              host: 'ghcr.io',
+              last_updated: '2025-05-18T09:50:10Z',
+              groups: [
+                {
+                  group: 'davidjspooner',
+                  last_updated: '2025-05-18T09:49:00Z',
+                  names: [
+                    {
+                      name: 'repoxy',
+                      last_updated: '2025-05-18T09:48:45Z',
+                      files: [
+                        {
+                          file: 'manifest.json',
+                          path: 'docker/github/davidjspooner/repoxy/manifest.json',
+                          size_bytes: 680,
+                          modified: '2025-05-18T09:48:42Z',
+                          content_type: 'application/vnd.oci.image.manifest.v1+json',
+                          checksums: {
+                            sha256: '4444444444444444444444444444444444444444444444444444444444444444',
+                          },
+                          download_count: 8,
+                          last_accessed: '2025-05-18T11:20:00Z',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'terraform',
+      label: 'Terraform Providers',
+      description: 'Providers mirrored from registry.terraform.io.',
+      repos: [
+        {
+          name: 'terraform-hashicorp',
+          display_name: 'HashiCorp Registry',
+          hosts: [
+            {
+              host: 'registry.terraform.io',
+              last_updated: '2025-05-18T08:22:00Z',
+              groups: [
+                {
+                  group: 'hashicorp',
+                  last_updated: '2025-05-18T08:21:00Z',
+                  names: [
+                    {
+                      name: 'aws',
+                      last_updated: '2025-05-18T08:20:30Z',
+                      files: [
+                        {
+                          file: 'metadata.json',
+                          path: 'terraform/terraform-hashicorp/hashicorp/aws/metadata.json',
+                          size_bytes: 1536,
+                          modified: '2025-05-18T08:20:28Z',
+                          content_type: 'application/json',
+                          checksums: {
+                            sha256: '5555555555555555555555555555555555555555555555555555555555555555',
+                          },
+                          download_count: 102,
+                          last_accessed: '2025-05-18T11:00:00Z',
+                        },
+                        {
+                          file: 'aws_5.45.0.zip',
+                          path: 'terraform/terraform-hashicorp/hashicorp/aws/aws_5.45.0.zip',
+                          size_bytes: 52428800,
+                          modified: '2025-05-18T08:20:20Z',
+                          content_type: 'application/zip',
+                          checksums: {
+                            sha256: '6666666666666666666666666666666666666666666666666666666666666666',
+                          },
+                          download_count: 34,
+                          last_accessed: '2025-05-18T10:05:11Z',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  toasts: [
+    { id: 'toast-1', level: 'success', message: 'Connected to mock backend' },
+    { id: 'toast-2', level: 'info', message: 'Mock data loaded' },
+  ],
+};

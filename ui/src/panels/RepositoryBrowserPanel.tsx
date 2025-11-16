@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Unstable_Grid2';
 import type { FolderNode, FileRow } from '../components';
 import { FolderTreeView, FileListTable } from '../components';
 

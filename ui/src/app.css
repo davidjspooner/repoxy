@@ -1,15 +1,9 @@
 .app-shell {
-  min-height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: linear-gradient(145deg, #141b24, #0b1017);
 }
 
-.todo-text {
-  font-size: clamp(2rem, 4vw, 4rem);
-  letter-spacing: 0.25rem;
-  text-transform: uppercase;
-  color: #f2f4f8;
-  margin: 0;
+.density-compact .MuiTableCell-root,
+.density-compact .MuiListItemButton-root {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
