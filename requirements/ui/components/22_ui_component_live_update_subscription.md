@@ -25,8 +25,8 @@ A non-visual component/service coordinating **change notifications** from the ba
 
 - On connection loss:
   - Immediately instructs the Concertina Shell to display a **Connection Status modal** that blocks interaction (there is no offline mode).
-  - Drives an **exponential backoff retry loop** that grows until it reaches a maximum interval of **2 minutes**, then continues retrying every 2 minutes until success or the tab is closed.
-  - Updates the modal every second with the remaining time until the next attempt.
+  - Drives an **exponential backoff retry loop** that grows until it reaches a maximum interval of **2 minutes**, then continues retrying every 2 minutes indefinitely (or until the tab is closed).
+  - Updates the modal every second with the remaining time until the next attempt, the **elapsed offline time**, and provides a short troubleshooting hint from configuration.
   - Supports a user-triggered **Retry Now** action exposed in the modal; pressing it triggers an immediate retry and restarts the backoff ladder.
   - Once reconnection succeeds, hides the modal and resumes normal notifications (including refreshing any stale panels).
 

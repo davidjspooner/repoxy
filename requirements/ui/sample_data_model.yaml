@@ -1,0 +1,152 @@
+meta:
+  generated_at: 2025-05-18T12:00:00Z
+  note: >
+    Sample data used to mock the Repoxy UI during development.
+    Values are illustrative and loosely based on repoxy/conf/repoxy.yaml.
+
+repository_types:
+  - type: docker
+    label: Docker / OCI
+    description: Container images mirrored from upstream registries.
+    repos:
+      - name: dockerhub
+        display_name: Docker Hub (registry-1.docker.io)
+        hosts:
+          - host: registry-1.docker.io
+            last_updated: 2025-05-18T10:12:03Z
+            groups:
+              - group: library
+                last_updated: 2025-05-18T10:11:00Z
+                names:
+                  - name: nginx
+                    last_updated: 2025-05-18T10:10:45Z
+                    files:
+                      - file: manifest.json
+                        path: docker/dockerhub/library/nginx/manifest.json
+                        size_bytes: 812
+                        modified: 2025-05-18T10:10:44Z
+                        content_type: application/vnd.oci.image.manifest.v1+json
+                        checksums:
+                          sha256: 1111111111111111111111111111111111111111111111111111111111111111
+                        download_count: 42
+                        last_accessed: 2025-05-18T10:55:00Z
+                      - file: config.json
+                        path: docker/dockerhub/library/nginx/config.json
+                        size_bytes: 2048
+                        modified: 2025-05-18T10:10:40Z
+                        content_type: application/json
+                        checksums:
+                          sha256: 2222222222222222222222222222222222222222222222222222222222222222
+                        download_count: 37
+                        last_accessed: 2025-05-18T10:48:12Z
+              - group: redis
+                last_updated: 2025-05-17T19:30:00Z
+                names:
+                  - name: alpine
+                    last_updated: 2025-05-17T19:29:10Z
+                    files:
+                      - file: manifest.json
+                        path: docker/dockerhub/redis/alpine/manifest.json
+                        size_bytes: 756
+                        modified: 2025-05-17T19:29:09Z
+                        content_type: application/vnd.oci.image.manifest.v1+json
+                        checksums:
+                          sha256: 3333333333333333333333333333333333333333333333333333333333333333
+                        download_count: 12
+                        last_accessed: 2025-05-18T09:14:02Z
+      - name: github
+        display_name: GitHub Container Registry (ghcr.io)
+        hosts:
+          - host: ghcr.io
+            last_updated: 2025-05-18T09:50:10Z
+            groups:
+              - group: davidjspooner
+                last_updated: 2025-05-18T09:49:00Z
+                names:
+                  - name: repoxy
+                    last_updated: 2025-05-18T09:48:45Z
+                    files:
+                      - file: manifest.json
+                        path: docker/github/davidjspooner/repoxy/manifest.json
+                        size_bytes: 680
+                        modified: 2025-05-18T09:48:42Z
+                        content_type: application/vnd.oci.image.manifest.v1+json
+                        checksums:
+                          sha256: 4444444444444444444444444444444444444444444444444444444444444444
+                        download_count: 8
+                        last_accessed: 2025-05-18T11:20:00Z
+
+  - type: terraform
+    label: Terraform Providers
+    description: Providers mirrored from registry.terraform.io.
+    repos:
+      - name: terraform-hashicorp
+        display_name: HashiCorp Registry
+        hosts:
+          - host: registry.terraform.io
+            last_updated: 2025-05-18T08:22:00Z
+            groups:
+              - group: hashicorp
+                last_updated: 2025-05-18T08:21:00Z
+                names:
+                  - name: aws
+                    last_updated: 2025-05-18T08:20:30Z
+                    files:
+                      - file: metadata.json
+                        path: terraform/terraform-hashicorp/hashicorp/aws/metadata.json
+                        size_bytes: 1536
+                        modified: 2025-05-18T08:20:28Z
+                        content_type: application/json
+                        checksums:
+                          sha256: 5555555555555555555555555555555555555555555555555555555555555555
+                        download_count: 102
+                        last_accessed: 2025-05-18T11:00:00Z
+                      - file: aws_5.45.0.zip
+                        path: terraform/terraform-hashicorp/hashicorp/aws/aws_5.45.0.zip
+                        size_bytes: 52428800
+                        modified: 2025-05-18T08:20:20Z
+                        content_type: application/zip
+                        checksums:
+                          sha256: 6666666666666666666666666666666666666666666666666666666666666666
+                        download_count: 34
+                        last_accessed: 2025-05-18T10:05:11Z
+
+  - type: tofu
+    label: OpenTofu Providers
+    description: Providers mirrored from registry.opentofu.org.
+    repos:
+      - name: opentofu-registry
+        display_name: OpenTofu Registry
+        hosts:
+          - host: registry.opentofu.org
+            last_updated: 2025-05-16T16:05:00Z
+            groups:
+              - group: opentofu
+                last_updated: 2025-05-16T16:04:00Z
+                names:
+                  - name: example
+                    last_updated: 2025-05-16T16:03:30Z
+                    files:
+                      - file: metadata.json
+                        path: tofu/opentofu-registry/opentofu/example/metadata.json
+                        size_bytes: 768
+                        modified: 2025-05-16T16:03:25Z
+                        content_type: application/json
+                        checksums:
+                          sha256: 7777777777777777777777777777777777777777777777777777777777777777
+                        download_count: 4
+                        last_accessed: 2025-05-17T12:00:00Z
+
+settings_defaults:
+  theme: light
+  density: comfortable
+
+toasts:
+  - id: toast-1
+    level: success
+    message: "Live update subscription connected."
+    created_at: 2025-05-18T11:15:00Z
+  - id: toast-2
+    level: error
+    message: "Failed to refresh repo metadata."
+    created_at: 2025-05-18T11:16:30Z

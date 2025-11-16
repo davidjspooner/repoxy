@@ -116,7 +116,8 @@ The UI assumes a **long-running connection** to the backend (e.g. WebSocket, SSE
 If the long-running connection is lost:
 - There is **no offline mode**. The UI cannot be used until connectivity returns.
 - The Concertina Shell displays a **modal dialog overlay** (blocking interaction) describing the connection loss.
-- The dialog shows a countdown to the next automatic retry, following an exponential sequence until it hits a **2-minute ceiling**; after reaching that ceiling it continues retrying every 2 minutes until the web app reconnects or the browser tab is closed.
+- The dialog shows a countdown to the next automatic retry, following an exponential sequence until it hits a **2-minute ceiling**; after reaching that ceiling it continues retrying every 2 minutes **indefinitely** until the web app reconnects or the browser tab is closed.
+- The modal also displays the **elapsed offline time** and a short troubleshooting hint (e.g. “Check homelab backend or network cabling”) so prolonged outages still feel accounted for.
 - The countdown updates each second; a prominent **“Retry Now”** button lets the user trigger an immediate attempt (which also resets the backoff sequence).
 - Once a retry succeeds the modal is dismissed automatically and the UI resumes normal behaviour.
 

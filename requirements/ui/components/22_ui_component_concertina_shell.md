@@ -64,5 +64,6 @@ Threshold for determining “wide” vs “narrow” is implementation-specific.
   - Shell determines whether to refresh those panels when they are next displayed.
 - If the Live Update Subscription reports a lost connection (no offline mode):
   - Shell renders a **modal overlay** (blocking panel interaction) showing the countdown supplied by the subscription logic and a **Retry Now** button.
-  - Automatic retries follow the exponential/backoff rules until capped at two minutes, after which they continue at two-minute intervals.
+  - Modal also displays elapsed offline time plus a short troubleshooting hint received from the subscription service.
+  - Automatic retries follow the exponential/backoff rules until capped at two minutes, after which they continue at two-minute intervals indefinitely (or until the user closes the tab).
   - The overlay is dismissed automatically once reconnection succeeds; users cannot interact with panels while it is visible.

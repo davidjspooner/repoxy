@@ -8,7 +8,7 @@ A tabular view of files in the currently selected folder.
 - Display files and basic metadata.
 - Provide sorting within the current folder.
 - Allow selecting a file to open File Details.
-- Assume folder contents are **small enough** to render in one table for MVP; pagination and filtering are deferred to post-MVP.
+- Assume folder contents are **small enough** to render in one table for MVP (roughly a few dozen rows); pagination, filtering, and virtual scrolling are deferred to post-MVP.
 
 ## Columns (MVP)
 
@@ -36,3 +36,7 @@ Additional columns can be added later, but these are sufficient for MVP.
 
 - Vertical scroll for large file lists.
 - Horizontal scroll when combined column widths exceed available space.
+
+## Future Scalability (Post-MVP)
+
+- When folder contents exceed the assumed size (hundreds/thousands of files), introduce server-backed pagination or virtualized scrolling (see `../28_ui_post_mvp.md`).

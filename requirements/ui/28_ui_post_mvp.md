@@ -58,6 +58,7 @@ Currently, these controls must either:
 - **Global search** across repository types.
 - Per-folder filtering inside the File List Table (text filters, regex, etc.).
 - Advanced filtering (by tag, date ranges, size ranges, etc.).
+- Pagination/virtual scrolling for File List when folders hold hundreds or thousands of files.
 - Saved searches or pinned views.
 
 ---

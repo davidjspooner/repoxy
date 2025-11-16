@@ -30,6 +30,9 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
      2. `group`
      3. `name`
    - Folders at the `host` and `group` levels only contain subfolders; `name` folders contain files (and no further folders).
+   - Mapping examples:
+     - **Docker/OCI:** `host` = registry hostname (e.g. `registry-1.docker.io`), `group` = namespace/org (e.g. `library`, `davidjspooner`), `name` = image name/tag combination (e.g. `nginx`, `repoxy`).
+     - **Terraform/OpenTofu:** `host` = upstream registry (e.g. `registry.terraform.io`, `registry.opentofu.org`), `group` = publisher (e.g. `hashicorp`, `opentofu`), `name` = provider/module identifier (e.g. `aws`, `example`).
    - No file nodes appear in the tree.
    - Behaves like a typical file system tree:
      - Expand/collapse folders.
