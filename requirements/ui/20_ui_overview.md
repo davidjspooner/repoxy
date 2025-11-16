@@ -48,7 +48,8 @@ From top to bottom, the screen is structured as:
 
 3. **Footer Summary Bar**  
    - Fixed at the bottom.
-   - Shows a **very brief summary** of the currently selected item (repository, folder, or file).
+   - Shows a **very brief summary** of the currently selected item (repository, folder, or file) along with its **last updated timestamp** reported by the backend.
+   - If the UI loses its live-update connection, the footer suffixes the summary with ` (disconnected)` until connectivity is restored.
    - Distinct from the detailed information shown in the right-hand detail panel.
 
 ### Desktop vs Mobile
@@ -74,10 +75,12 @@ From top to bottom, the screen is structured as:
 At a conceptual level, the navigation stack is:
 
 1. **Repository Types Panel**  
-   - Tiles representing repository types that currently have data (e.g. Docker, Terraform, PyPI, APT).
+   - Tiles representing repository categories that have configured repositories (derived entirely from the backend’s repo catalogue such as `repoxy/conf/repoxy.yaml`, e.g. Docker, Terraform, OpenTofu).  
+   - Repo types that have **no configured instances** are hidden; the UI is a direct reflection of configuration.
 
 2. **Repository Browser Panel** (per repository type)  
-   - Left side: **Folder Tree View** (folders only; no files).
+   - Left side: **Folder Tree View** whose **top-level nodes are repository names** within the chosen type (for the example config: `dockerhub`, `github`, `terraform-hashicorp`, `opentofu-registry`).  
+   - The depth and naming of folders under each repo instance are **type specific**, but files only appear in **leaf folders** (no folder contains both files and child folders).
    - Right side: **File List Table** (files in the selected folder).
 
 3. **File Details Panel**  

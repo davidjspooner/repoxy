@@ -2,7 +2,8 @@
 # Post-MVP UI Features (Out of Scope for MVP)
 
 This file explicitly lists features that are **known future enhancements** and must **not** be implemented in the MVP.  
-UI elements for these features may appear **disabled** to hint at future capabilities.
+UI elements for these features may appear **disabled** to hint at future capabilities.  
+Specific behaviours, layouts, and data flows referenced here are often **TBD**; detailed definitions are intentionally deferred until after the MVP when priorities are clearer.
 
 ---
 
@@ -54,6 +55,7 @@ Currently, these controls must either:
 ## Advanced Navigation & Search
 
 - **Global search** across repository types.
+- Per-folder filtering inside the File List Table (text filters, regex, etc.).
 - Advanced filtering (by tag, date ranges, size ranges, etc.).
 - Saved searches or pinned views.
 
@@ -67,4 +69,3 @@ Currently, these controls must either:
   - Storage consumption and trending.
 
 These would likely introduce new panels and components beyond the MVP’s browsing-oriented UI.
-

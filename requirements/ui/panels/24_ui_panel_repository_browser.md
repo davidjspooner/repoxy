@@ -21,6 +21,11 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
 
 1. **Left Column – Folder Tree (FolderTreeView component)**  
    - Displays **folders only**.
+   - **Top-level nodes are repository names** scoped to the selected type (only repos defined for that type are shown).  
+     Example using `repoxy/conf/repoxy.yaml`:
+       - Selecting the Docker tile shows `dockerhub` and `github` as the first expandable nodes.
+       - Selecting the Terraform tile shows `terraform-hashicorp`; OpenTofu shows `opentofu-registry`.
+   - Folder depth beneath each repo is **type specific**, but each folder either contains more folders **or** files—not both; files exist only at the leaves.
    - No file nodes appear in the tree.
    - Behaves like a typical file system tree:
      - Expand/collapse folders.
@@ -32,9 +37,6 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
      - File name.
      - Last modified date.
      - Size.
-   - Includes a simple **filter/search input** (MVP):
-     - Text-based filter that narrows the visible rows (e.g. substring match on name).
-     - Filtering happens within the UI; the underlying folder contents are not re-requested unless required by backend design.
 
 ## Independent Scrolling
 
@@ -62,10 +64,6 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
   - Clicking a table header toggles sort order for that column (ascending/descending).
   - Only one active sort column at a time in MVP.
 
-- **Filtering**
-  - Changes to the filter input narrow down the visible rows in the File List.
-  - Filter state is local to this panel instance and resets when navigating to a different repository type (unless preserved intentionally by implementation).
-
 ## States
 
 - **Loading**
@@ -77,7 +75,7 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
 
 - **Empty**
   - If the repository type has **no repositories or folders**:
-    - Show empty state message.
+    - Show empty state message in the tree column (e.g. “No repositories configured for this type.”).
   - If a folder has **no files**:
     - File List shows a “No files in this folder” message.
 
@@ -97,4 +95,3 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
 - If the **current folder** is deleted:
   - The panel requests its parent folder.
   - If none exists, the concertina shell navigates upward to the Repository Types panel.
-

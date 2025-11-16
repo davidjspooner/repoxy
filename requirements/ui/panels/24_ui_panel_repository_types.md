@@ -1,7 +1,8 @@
 
 # Repository Types Panel
 
-Displays the list of repository **types** that currently contain cached data.
+Displays the list of repository **types** that currently contain cached data.  
+These types map directly to the `type` field in the backend configuration (`repos` entries in `repoxy/conf/repoxy.yaml`), and the UI only shows types that have at least one configured repo instance (i.e. unused types remain hidden).
 
 ## Purpose
 
@@ -45,7 +46,7 @@ Only types that actually have **data** are shown in the MVP.
   - Show a skeleton or spinner in place of tiles.
 
 - **Empty:**  
-  - If there are no repository types with any data:
+  - If there are no repository types with configured repositories (e.g. every entry in `repos` is disabled or absent):
     - Show a message like: “No cached repositories available.”
     - MVP: no call-to-action, since adding repositories is post-MVP.
 

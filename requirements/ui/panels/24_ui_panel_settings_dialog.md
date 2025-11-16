@@ -33,9 +33,12 @@ A modal dialog for **personalisation and basic UI settings**.
      - Space where additional options can be added later.
 
 - Footer of the dialog:
-  - “Save” or “Apply” button.
-  - “Cancel” or “Close” button.
-  - For MVP it is acceptable for settings to apply immediately on change (no explicit save), but having an explicit close action is still required.
+  - A single “Close” button (or equivalent) plus an optional close icon.
+  - Settings apply **live** as soon as the user toggles a control; there are **no Save/Apply buttons**.
+  - All settings changes are persisted to **localStorage** immediately.
+  - Default values when no local settings exist:
+    - Theme: **Light**
+    - Density: **Comfortable**
 
 ## Interaction
 

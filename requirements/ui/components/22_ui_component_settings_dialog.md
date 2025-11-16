@@ -6,7 +6,11 @@ Component implementation for the Settings Dialog panel.
 ## Responsibilities
 
 - Present UI settings controls.
-- Apply settings to the application (either immediately or on save).
+- Apply settings to the application immediately (live) as the user changes controls; there are no Save/Apply buttons.
+- Persist selections to **localStorage** immediately so they survive reloads.
+- Default state when nothing is stored locally:
+  - Theme: Light
+  - Density: Comfortable
 
 ## Sections
 
@@ -32,7 +36,7 @@ Component implementation for the Settings Dialog panel.
 - Close actions:
   - Close button (X).
   - Footer button (“Close” or “Done”).
-  - Optional: click on dimmed backdrop.
+- Optional: click on dimmed backdrop.
+  - These close actions **do not** apply changes; they merely dismiss the dialog because settings already apply live.
 
-Settings persistence details (e.g. localStorage vs backend) are **out of scope** for this UI spec but must not change the visual behaviour.
-
+Settings persistence is handled in-browser via localStorage as described above; no backend round-trip is required in MVP.

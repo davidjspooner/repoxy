@@ -1,7 +1,9 @@
 
 # Component: FolderTreeView
 
-Displays a **folder-only tree** for a repository’s contents.
+Displays a **folder-only tree** for a repository’s contents.  
+When scoped to a repository type, the **root-level nodes represent repository names** returned by the backend (e.g. entries from `repos` in `repoxy/conf/repoxy.yaml`).  
+Folder depth beneath each repo is type-specific, but the tree enforces a convention that files only appear at the leaves (a folder either has child folders or files, not both).
 
 ## Responsibilities
 
@@ -29,4 +31,3 @@ Displays a **folder-only tree** for a repository’s contents.
 
 - May have its own vertical scrollbar if the tree is long.
 - Typically no horizontal scroll; however long folder names may require it.
-

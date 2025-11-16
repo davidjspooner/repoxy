@@ -6,7 +6,7 @@ A tabular view of files in the currently selected folder.
 ## Responsibilities
 
 - Display files and basic metadata.
-- Provide sorting and filtering within the current folder.
+- Provide sorting within the current folder.
 - Allow selecting a file to open File Details.
 
 ## Columns (MVP)
@@ -24,12 +24,6 @@ Additional columns can be added later, but these are sufficient for MVP.
   - Toggles between ascending/descending.
 - Only one sort key active at a time.
 
-## Filtering
-
-- Simple text filter input (above the table):
-  - Filters rows by substring match on filename (and possibly other fields).
-  - Implemented client-side on the current folder’s dataset.
-
 ## Selection
 
 - Row click:
@@ -41,4 +35,3 @@ Additional columns can be added later, but these are sufficient for MVP.
 
 - Vertical scroll for large file lists.
 - Horizontal scroll when combined column widths exceed available space.
-
