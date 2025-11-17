@@ -50,17 +50,23 @@ From top to bottom, the screen is structured as:
 
 - **Desktop / Wide Viewports**
   - Header and breadcrumbs are always visible.
-  - Concertina region shows up to **two visible panels** side by side:
-    - Left: “context” panel (e.g. list of repo types, or folder tree + file list).
-    - Right: “detail” panel (e.g. file details).
+  - Concertina region usually shows **two visible panels** side by side:
+    - Left: the **Folder Browser** panel when browsing within a repository type.
+    - Right: either the **File List** panel or, when a file is selected, the **File Details** panel. (When File Details is visible the File List shifts to the left slot.)
+  - Repository Types occupies a single panel; when fewer than two panels exist the shell leaves the unused slot empty.
   - A **draggable vertical divider** between the two visible panels allows resizing but never fully hides either panel.
 
 - **Mobile / Narrow Viewports**
   - Header and breadcrumbs still visible.
-  - Concertina region shows only **one panel at a time**:
+ - Concertina region shows only **one panel at a time**:
     - The **current (rightmost) panel** is shown.
     - Users move back using the breadcrumb trail (or a built-in back affordance within the concertina shell).
   - Internally the shell still maintains a stack of panels, but only one is rendered.
+
+### Panel Visual Style
+
+- Every panel renders its content on a **pale pastel cyan background** so the information blocks feel lightweight while staying consistent across panel types.
+- The `PanelContainer` that wraps each panel uses a **lilac background** and stretches to fill (but not exceed) the height allotted by the concertina shell, relying on scrollbars for overflow.
 
 ---
 

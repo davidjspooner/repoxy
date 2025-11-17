@@ -196,24 +196,12 @@ export function FloatingDebugButton({
 function dumpPanelDiagnostics(customMessage: string) {
   const appMainMetrics = measureElement(document.querySelector('.app-main'));
   const concertinaMetrics = measureElement(document.querySelector('.concertina-shell'));
-  const panelSlotReport = Array.from(document.querySelectorAll('.panel-slot'))
-    .map((slot, index) => {
-      const metrics = measureElement(slot);
-      if (!metrics) return null;
-      return {
-        slot: index,
-        classes: slot.className,
-        width: metrics.width,
-        height: metrics.height,
-        top: metrics.top,
-        bottom: metrics.bottom,
-      };
-    })
-    .filter(isNotNull);
   const panelReport = Array.from(document.querySelectorAll('.panel-container-debug'))
     .map((panel, index) => {
       const metrics = measureElement(panel);
       if (!metrics) return null;
+      const scroller = panel.querySelector('.panel-content-scroller');
+      const scrollerMetrics = scroller ? measureElement(scroller) : null;
       return {
         panel: index,
         width: metrics.width,
@@ -221,6 +209,8 @@ function dumpPanelDiagnostics(customMessage: string) {
         scrollHeight: metrics.scrollHeight,
         clientHeight: metrics.clientHeight,
         scrollTop: metrics.scrollTop,
+        scrollerScrollHeight: scrollerMetrics?.scrollHeight ?? null,
+        scrollerClientHeight: scrollerMetrics?.clientHeight ?? null,
       };
     })
     .filter(isNotNull);
@@ -229,10 +219,6 @@ function dumpPanelDiagnostics(customMessage: string) {
   console.log('Viewport', { innerWidth: window.innerWidth, innerHeight: window.innerHeight });
   console.log('App main', appMainMetrics ?? 'not found');
   console.log('Concertina shell', concertinaMetrics ?? 'not found');
-  if (panelSlotReport.length) {
-    console.log('Panel slot sizes');
-    console.table(panelSlotReport);
-  }
   if (panelReport.length) {
     console.log('Panel container sizes');
     console.table(panelReport);

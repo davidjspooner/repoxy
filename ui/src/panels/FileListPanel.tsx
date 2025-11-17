@@ -22,16 +22,8 @@ export function FileListPanel({
   onFileSelect,
   emptyFilesMessage = 'No files in this folder.',
 }: FileListPanelProps) {
-  const wrapperStyle = {
-    display: 'inline-flex',
-    flexDirection: 'column',
-    backgroundColor: '#e3f2fd',
-    minHeight: 'max-content',
-    minWidth: 'max-content',
-  } as const;
-
   return (
-    <Box sx={wrapperStyle}>
+    <Box sx={{ display: 'inline-flex', flexDirection: 'column', minWidth: 'max-content' }}>
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {filesLoading ? (
           <Box display="flex" justifyContent="center" py={2}>

@@ -14,7 +14,7 @@ A generic wrapper that hosts an individual panel’s content.
 - Receives a fixed rectangle from the Concertina Shell:
   - Width determined by shell layout and draggable divider.
   - Height determined by available space between the header (including breadcrumbs) and the bottom of the viewport.
-- Uses the theme's **paper** background with a consistent **2 px border** so every panel reads as a defined card, matching the header surface.
+- Uses a **lilac / pastel purple background** (#f3e5f5) so it visually separates the concertina shell from the panel content. The container stretches to fill the height allocated by the shell but may not expand beyond that height; any overflow is handled via scrollbars.
 - Internal scrolling:
   - Vertical scroll when content height exceeds container height.
   - Horizontal scroll when content width exceeds container width.

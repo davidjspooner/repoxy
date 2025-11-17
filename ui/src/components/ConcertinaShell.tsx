@@ -32,7 +32,7 @@ export function ConcertinaShell({ panels }: ConcertinaShellProps) {
           border: '3px solid #2e7d32',
           p: 0,
           boxSizing: 'border-box',
-          backgroundColor: (theme) => theme.palette.background.paper,
+          backgroundColor: '#e8f5e9',
         }}
       >
         <PanelContainer>{panel.content}</PanelContainer>
@@ -56,7 +56,7 @@ export function ConcertinaShell({ panels }: ConcertinaShellProps) {
         border: '3px solid #2e7d32',
         p: 0,
         boxSizing: 'border-box',
-        backgroundColor: (theme) => theme.palette.background.paper,
+        backgroundColor: '#e8f5e9',
       }}
     >
       <PanelContainer

@@ -75,7 +75,7 @@ export default function App() {
   const panels: PanelDescriptor[] = [
     {
       id: 'repository-types',
-      title: 'Repository Types',
+      title: 'Repoxy',
       content: <RepositoryTypesPanel repoTypes={repoTypes} selectedId={selectedTypeId} />,
     },
   ];
@@ -139,7 +139,7 @@ export default function App() {
   const breadcrumbs: BreadcrumbItem[] = [
     {
       id: 'crumb-types',
-      label: 'Repository Types',
+      label: 'Repoxy',
       onSelect: () => {
         setSelectedTypeId(null);
         setSelectedFolderId(null);

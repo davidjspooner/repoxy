@@ -22,17 +22,9 @@ export function FolderBrowserPanel({
   onFolderSelect,
   emptyTreeMessage = 'No repositories configured for this type.',
 }: FolderBrowserPanelProps) {
-  const wrapperStyle = {
-    display: 'inline-flex',
-    flexDirection: 'column',
-    backgroundColor: '#e3f2fd',
-    minHeight: 'max-content',
-    minWidth: 'max-content',
-  } as const;
-
   return (
-    <Box sx={wrapperStyle}>
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', pr: 1 }}>
+    <Box sx={{ display: 'inline-flex', flexDirection: 'column', minWidth: 'max-content' }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {treeLoading ? (
           <Box display="flex" justifyContent="center" py={2}>
             <CircularProgress size={24} />
