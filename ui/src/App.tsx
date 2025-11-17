@@ -187,6 +187,7 @@ export default function App() {
         display="flex"
         flexDirection="column"
         minHeight="100vh"
+        height="100vh"
         sx={{ backgroundColor: (theme) => theme.palette.background.default, overflow: 'hidden' }}
       >
         <HeaderBar breadcrumbs={breadcrumbs} onOpenSettings={() => setSettingsOpen(true)} />

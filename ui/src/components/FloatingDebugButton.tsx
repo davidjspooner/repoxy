@@ -194,34 +194,85 @@ export function FloatingDebugButton({
 }
 
 function dumpPanelDiagnostics(customMessage: string) {
-  const appMainMetrics = measureElement(document.querySelector('.app-main'));
-  const concertinaMetrics = measureElement(document.querySelector('.concertina-shell'));
-  const panelReport = Array.from(document.querySelectorAll('.panel-container-debug'))
-    .map((panel, index) => {
-      const metrics = measureElement(panel);
-      if (!metrics) return null;
-      const scroller = panel.querySelector('.panel-content-scroller');
-      const scrollerMetrics = scroller ? measureElement(scroller) : null;
-      return {
-        panel: index,
-        width: metrics.width,
-        height: metrics.height,
-        scrollHeight: metrics.scrollHeight,
-        clientHeight: metrics.clientHeight,
-        scrollTop: metrics.scrollTop,
-        scrollerScrollHeight: scrollerMetrics?.scrollHeight ?? null,
-        scrollerClientHeight: scrollerMetrics?.clientHeight ?? null,
-      };
-    })
+  const appMainEl = document.querySelector('.app-main');
+  const concertinaEl = document.querySelector('.concertina-shell');
+  const appMainMetrics = measureElement(appMainEl);
+  const concertinaMetrics = measureElement(concertinaEl);
+  const appMainOverflow = getOverflow(appMainEl);
+  const concertinaOverflow = getOverflow(concertinaEl);
+  const viewportReport = Array.from(document.querySelectorAll<HTMLElement>('.ScrollableViewPort'))
+    .map(analyzeScrollableViewport)
     .filter(isNotNull);
+  const warnings: string[] = [];
 
   console.group(`FloatingDebugButton: ${customMessage}`);
   console.log('Viewport', { innerWidth: window.innerWidth, innerHeight: window.innerHeight });
-  console.log('App main', appMainMetrics ?? 'not found');
-  console.log('Concertina shell', concertinaMetrics ?? 'not found');
-  if (panelReport.length) {
-    console.log('Panel container sizes');
-    console.table(panelReport);
+  const documentOverflow = {
+    bodyOverflow: getOverflow(document.body),
+    htmlOverflow: getOverflow(document.documentElement),
+  };
+  console.log('Document', documentOverflow);
+  console.log('App main', { metrics: appMainMetrics ?? 'not found', overflow: appMainOverflow ?? 'unknown' });
+  console.log('Concertina shell', {
+    metrics: concertinaMetrics ?? 'not found',
+    overflow: concertinaOverflow ?? 'unknown',
+  });
+
+  if (documentOverflow.bodyOverflow?.overflowY === 'hidden') {
+    warnings.push('body overflow-y is hidden — page-level scroll will never appear.');
+  }
+  if (documentOverflow.htmlOverflow?.overflowY === 'hidden') {
+    warnings.push('html overflow-y is hidden — page-level scroll will never appear.');
+  }
+
+  if (viewportReport.length) {
+    console.log('ScrollableViewPort summary');
+    console.table(
+      viewportReport.map((report) => {
+        const hasVerticalOverflow = report.metrics.scrollHeight > report.metrics.clientHeight;
+        const extendsPastWindow = report.metrics.bottom > window.innerHeight;
+        if (extendsPastWindow && !hasVerticalOverflow) {
+          warnings.push(
+            `Viewport #${report.index} extends past window (${report.metrics.bottom}px) but reports no overflow; parent chain may be restricting height.`,
+          );
+        }
+        if (hasVerticalOverflow && report.overflowY === 'hidden') {
+          warnings.push(`Viewport #${report.index} has overflow but CSS overflow-y=${report.overflowY}.`);
+        }
+        return {
+          viewport: report.index,
+          classList: report.classList,
+          overflowX: report.overflowX,
+          overflowY: report.overflowY,
+          scrollHeight: report.metrics.scrollHeight,
+          clientHeight: report.metrics.clientHeight,
+          childScrollHeight: report.childMetrics?.scrollHeight ?? null,
+          childClientHeight: report.childMetrics?.clientHeight ?? null,
+          childOverflowX: report.childOverflowX,
+          childOverflowY: report.childOverflowY,
+          hasVerticalOverflow,
+          extendsPastWindow,
+          windowBottomDiff: Math.round(report.metrics.bottom - window.innerHeight),
+        };
+      }),
+    );
+    viewportReport.forEach((report) => {
+      console.groupCollapsed(`Viewport #${report.index} overflow chain`);
+      console.table(report.overflowChain);
+      console.log('metrics', report.metrics);
+      if (report.childMetrics) {
+        console.log('child metrics', report.childMetrics);
+      }
+      console.groupEnd();
+    });
+  } else {
+    warnings.push('No ScrollableViewPort elements found.');
+  }
+
+  if (warnings.length) {
+    console.warn('Scroll diagnostics warnings:', warnings);
+  } else {
+    console.info('Scroll diagnostics found no obvious issues.');
   }
   console.groupEnd();
 }
@@ -258,4 +309,77 @@ function measureElement(element: Element | null): ElementMetrics | null {
 
 function isNotNull<T>(value: T | null): value is T {
   return value !== null;
+}
+
+interface ViewportDiagnostics {
+  index: number;
+  classList: string;
+  metrics: ElementMetrics;
+  childMetrics: ElementMetrics | null;
+  overflowX: string;
+  overflowY: string;
+  childOverflowX: string | null;
+  childOverflowY: string | null;
+  overflowChain: OverflowSnapshot[];
+}
+
+interface OverflowSnapshot {
+  depth: number;
+  tag: string;
+  classes: string;
+  overflowX: string;
+  overflowY: string;
+  height: number;
+  width: number;
+}
+
+function analyzeScrollableViewport(viewport: HTMLElement, index: number): ViewportDiagnostics | null {
+  const metrics = measureElement(viewport);
+  if (!metrics) {
+    return null;
+  }
+  const computed = window.getComputedStyle(viewport);
+  const firstChild = viewport.firstElementChild instanceof HTMLElement ? viewport.firstElementChild : null;
+  const childMetrics = measureElement(firstChild);
+  const childComputed = firstChild ? window.getComputedStyle(firstChild) : null;
+
+  return {
+    index,
+    classList: viewport.className,
+    metrics,
+    childMetrics,
+    overflowX: computed.overflowX,
+    overflowY: computed.overflowY,
+    childOverflowX: childComputed?.overflowX ?? null,
+    childOverflowY: childComputed?.overflowY ?? null,
+    overflowChain: collectOverflowChain(viewport),
+  };
+}
+
+function collectOverflowChain(element: HTMLElement): OverflowSnapshot[] {
+  const chain: OverflowSnapshot[] = [];
+  let current: HTMLElement | null = element;
+  let depth = 0;
+  while (current) {
+    const computed = window.getComputedStyle(current);
+    const rect = current.getBoundingClientRect();
+    chain.push({
+      depth,
+      tag: current.tagName.toLowerCase(),
+      classes: current.className,
+      overflowX: computed.overflowX,
+      overflowY: computed.overflowY,
+      height: Math.round(rect.height),
+      width: Math.round(rect.width),
+    });
+    depth += 1;
+    current = current.parentElement;
+  }
+  return chain;
+}
+
+function getOverflow(element: Element | null) {
+  if (!element) return null;
+  const computed = window.getComputedStyle(element);
+  return { overflowX: computed.overflowX, overflowY: computed.overflowY };
 }

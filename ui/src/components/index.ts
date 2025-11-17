@@ -4,7 +4,7 @@ export * from './DraggableDivider';
 export * from './FileListTable';
 export * from './FolderTreeView';
 export * from './HeaderBar';
-export * from './PanelContainer';
+export * from './ScrollableViewPort';
 export * from './RepoTypeTile';
 export * from './SettingsDialog';
 export * from './TileGrid';

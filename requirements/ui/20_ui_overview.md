@@ -66,7 +66,8 @@ From top to bottom, the screen is structured as:
 ### Panel Visual Style
 
 - Every panel renders its content on a **pale pastel cyan background** so the information blocks feel lightweight while staying consistent across panel types.
-- The `PanelContainer` that wraps each panel uses a **lilac background** and stretches to fill (but not exceed) the height allotted by the concertina shell, relying on scrollbars for overflow.
+- The `ScrollableViewPort` that wraps each panel uses a **paper/white background**, stretches to fill (but not exceed) the slot allotted by the concertina shell, and automatically provides scrollbars whenever its single child overflows.
+- The Concertina shell itself now sits on the same **paper background with no decorative border**, letting the draggable divider and panel padding define the structure.
 
 ---
 

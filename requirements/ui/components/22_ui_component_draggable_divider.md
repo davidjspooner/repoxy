@@ -5,7 +5,7 @@ Vertical divider between two visible panels in the Concertina Shell (desktop onl
 
 ## Responsibilities
 
-- Allow the user to resize the relative width of the **left** and **right** PanelContainers.
+- Allow the user to resize the relative width of the **left** and **right** ScrollableViewPorts.
 - Enforce minimum widths for both panels.
 
 ## Behaviour

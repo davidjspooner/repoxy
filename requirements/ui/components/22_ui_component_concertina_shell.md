@@ -8,7 +8,7 @@ The **core layout/flow controller** for panels.
 - Manage a **stack of panels**.
 - Render **one or two panels** at a time depending on viewport width.
 - Provide **breadcrumbs** for navigation.
-- Host panel containers and the draggable divider.
+- Host `ScrollableViewPort` instances and the draggable divider.
 - Display the **Connection Status modal overlay** when instructed (e.g. on live-update disconnects).
 
 ## Structure
@@ -17,7 +17,7 @@ Within the area below the header and above the bottom edge of the viewport:
 
 1. **Breadcrumb Bar** (top area of the shell).
 2. **Visible Panels Region**:
-   - One or two **Panel Containers** representing the top of the stack.
+   - One or two **ScrollableViewPorts** representing the top of the stack.
 
 ## Panel Stack
 
@@ -52,9 +52,9 @@ Threshold for determining “wide” vs “narrow” is implementation-specific.
 
 ## Scroll Handling
 
-- Each visible panel is wrapped in a `PanelContainer` with its own vertical (and optional horizontal) scrolling.
-- The Concertina Shell **does not** handle scrolling directly; it just arranges panel containers side by side.
-- Shell container flexes to fill the space between the header and the bottom of the viewport, with square corners and an optional accent border (e.g. 2 px) to visually separate it from the background.
+- Each visible panel is wrapped in a `ScrollableViewPort` that fills its allotted slot, keeps a white/paper background, and automatically adds horizontal/vertical scrollbars if its lone child exceeds the view.
+- The Concertina Shell **does not** handle scrolling directly; it just arranges `ScrollableViewPort`s side by side.
+- Shell container flexes to fill the space between the header and the bottom of the viewport with a flat paper background and no additional border treatments; the visual separation is now handled entirely by panel spacing/content.
 
 ## Live Updates & Deletion Handling
 
