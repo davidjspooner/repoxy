@@ -17,7 +17,7 @@ Displays the **folder tree and files** for a specific repository type (and possi
 
 ## Layout
 
-Within this **single panel**, we have a **two-column layout** managed by the panel’s internal layout (not the Concertina Shell):
+Within this **single panel**, we have a **two-column layout** managed by the panel’s internal layout (not the Concertina Shell). Each column begins with a lightweight heading (e.g. “Folder Tree”, “Files”) so users instantly see which context they are in.
 
 1. **Left Column – Folder Tree (FolderTreeView component)**  
    - Displays **folders only**.
@@ -40,6 +40,7 @@ Within this **single panel**, we have a **two-column layout** managed by the pan
 
 2. **Right Column – File List (FileListTable component)**  
    - Displays files within the **currently selected `name` folder**.
+   - The file list is a **dedicated panel area** separate from the folder tree; folders never intermingle with file rows.
    - Tabular layout with sortable headers:
      - File name.
      - Last modified date.

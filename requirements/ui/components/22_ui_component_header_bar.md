@@ -5,14 +5,14 @@ The fixed top-level bar visible on all screens.
 
 ## Responsibilities
 
-- Provide **global context** (app identity).
+- Host the **breadcrumb bar** so navigation is always visible.
 - Provide **access to user-related actions** (settings, account, future logout).
 - Never scrolls out of view.
 
 ## Layout
 
 - Left-aligned:
-  - Application name, e.g. **Repoxy**.
+  - Breadcrumbs showing the current path (Repository Types → Repository Browser → File Details).
 - Right-aligned:
   - Username (MVP: `admin`).
   - Small user/avatar icon or button that opens the **user menu**.
@@ -30,5 +30,4 @@ The visual disabled state communicates future capabilities while making it clear
 - Stays fixed as user scrolls content in panels.
 - Works the same on desktop and mobile.
 - Responsiveness:
-  - On very narrow screens, text labels may shorten (e.g. using just an icon for the user menu).
-
+  - Breadcrumbs truncate/collapse on narrow widths but remain interactive.

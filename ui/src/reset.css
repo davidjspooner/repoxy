@@ -10,8 +10,10 @@ html {
   background-color: #0b1017;
   color: #f2f4f8;
   height: 100%;
+  overflow: hidden;
 }
 
 #root {
   height: 100%;
+  overflow: hidden;
 }

@@ -5,15 +5,8 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import './app.css';
 import type { PanelDescriptor, BreadcrumbItem, RepoType, FolderNode, FileRow, ToastMessage } from './components';
-import {
-  HeaderBar,
-  FooterSummaryBar,
-  BreadcrumbBar,
-  ConcertinaShell,
-  ToastQueue,
-  SettingsDialog,
-} from './components';
-import { RepositoryTypesPanel, RepositoryBrowserPanel, FileDetailsPanel } from './panels';
+import { HeaderBar, ConcertinaShell, ToastQueue, SettingsDialog, FloatingDebugButton } from './components';
+import { RepositoryTypesPanel, FolderBrowserPanel, FileListPanel, FileDetailsPanel } from './panels';
 import {
   sampleData,
   type SampleRepoType,
@@ -83,23 +76,37 @@ export default function App() {
     {
       id: 'repository-types',
       title: 'Repository Types',
-      content: <RepositoryTypesPanel repoTypes={repoTypes} />, 
+      content: <RepositoryTypesPanel repoTypes={repoTypes} selectedId={selectedTypeId} />,
     },
   ];
 
   if (selectedType && builtRepo) {
     panels.push({
-      id: `browser-${selectedType.type}`,
-      title: selectedType.label,
+      id: `folders-${selectedType.type}`,
+      title: `${selectedType.label} Folders`,
       content: (
-        <RepositoryBrowserPanel
+        <FolderBrowserPanel
           folders={builtRepo.folders}
-          files={folderFiles}
+          selectedFolderId={selectedFolderId}
           onFolderSelect={(node) => {
             setSelectedFolderId(node.id);
             setSelectedFileId(null);
           }}
+        />
+      ),
+    });
+
+    panels.push({
+      id: `files-${selectedType.type}`,
+      title: `${selectedType.label} Files`,
+      content: (
+        <FileListPanel
+          files={folderFiles}
+          selectedFileId={selectedFileId}
           onFileSelect={(row) => setSelectedFileId(row.id)}
+          emptyFilesMessage={
+            selectedFolderId ? 'No files in this folder.' : 'Select a folder on the left to view files.'
+          }
         />
       ),
     });
@@ -162,12 +169,6 @@ export default function App() {
     });
   }
 
-  const summary = buildFooterSummary({
-    type: selectedType,
-    folder: selectedFolderId && builtRepo ? builtRepo.folderMeta[selectedFolderId] : null,
-    file: selectedFile,
-  });
-
   const theme = useMemo(() => {
     let mode: 'light' | 'dark';
     if (themeMode === 'system') {
@@ -181,16 +182,27 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box className={`app-shell density-${density}`} display="flex" flexDirection="column" minHeight="100vh">
-        <HeaderBar onOpenSettings={() => setSettingsOpen(true)} />
+      <Box
+        className={`app-shell density-${density}`}
+        display="flex"
+        flexDirection="column"
+        minHeight="100vh"
+        sx={{ backgroundColor: (theme) => theme.palette.background.default, overflow: 'hidden' }}
+      >
+        <HeaderBar breadcrumbs={breadcrumbs} onOpenSettings={() => setSettingsOpen(true)} />
         <Toolbar />
-        <Box component="main" flex={1} display="flex" flexDirection="column" overflow="hidden" pb={8}>
-          <BreadcrumbBar items={breadcrumbs} />
-          <Box flex={1} minHeight={0}>
-            <ConcertinaShell panels={panels} />
-          </Box>
+        <Box
+          component="main"
+          className="app-main"
+          flex={1}
+          display="flex"
+          flexDirection="column"
+          overflow="hidden"
+          sx={{ minHeight: 0 }}
+        >
+          <ConcertinaShell panels={panels} />
         </Box>
-        <FooterSummaryBar summary={summary} />
+        <FloatingDebugButton />
         <SettingsDialog
           open={settingsOpen}
           density={density}
@@ -298,27 +310,6 @@ function buildFileDetail(repoType: SampleRepoType, repo: SampleRepo, nameEntry: 
     downloadCount: file.download_count,
     lastAccessed: file.last_accessed,
   };
-}
-
-function buildFooterSummary({
-  type,
-  folder,
-  file,
-}: {
-  type: SampleRepoType | null;
-  folder: FolderMeta | null;
-  file: FileDetail | null;
-}) {
-  if (file) {
-    return `File: ${file.name} | Size: ${formatBytes(file.sizeBytes)} | Modified: ${file.modified}`;
-  }
-  if (folder && type) {
-    return `Type: ${type.label} | Path: ${folder.path.join(' / ')}`;
-  }
-  if (type) {
-    return `Viewing ${type.label}`;
-  }
-  return 'Viewing repository types.';
 }
 
 function formatBytes(size: number) {

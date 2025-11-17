@@ -38,32 +38,25 @@ Those actions are explicitly **post-MVP** and are documented in `28_ui_post_mvp.
 From top to bottom, the screen is structured as:
 
 1. **Header Bar**  
-   - Fixed at the top.
-   - Left: Application name (e.g. “Repoxy”).
-   - Right: Username (`admin` in MVP) and a user menu trigger.
+   - Fixed at the top in a light “paper” colour.
+   - Left: **Breadcrumb bar** for navigation (always visible).
+   - Right: Username (`admin` in MVP) and a user menu trigger containing Settings (enabled) plus disabled Account/Logout entries.
 
-2. **Concertina Shell (Breadcrumb + Panel Region)**  
+2. **Concertina Shell (Panel Region)**  
    - Immediately below the header.
-   - Contains:
-     - A **breadcrumb bar** for navigation (always visible).
-     - A **concertina panel region** that shows **one or two panels at a time**.
-
-3. **Footer Summary Bar**  
-   - Fixed at the bottom.
-   - Shows a **very brief summary** of the currently selected item (repository, folder, or file) along with its **last updated timestamp** reported by the backend.
-   - Distinct from the detailed information shown in the right-hand detail panel.
+   - Contains the **panel containers** (one or two visible at a time) and the draggable divider on wide screens.
 
 ### Desktop vs Mobile
 
 - **Desktop / Wide Viewports**
-  - Header, breadcrumbs, and footer are always visible.
+  - Header and breadcrumbs are always visible.
   - Concertina region shows up to **two visible panels** side by side:
     - Left: “context” panel (e.g. list of repo types, or folder tree + file list).
     - Right: “detail” panel (e.g. file details).
   - A **draggable vertical divider** between the two visible panels allows resizing but never fully hides either panel.
 
 - **Mobile / Narrow Viewports**
-  - Header, breadcrumbs, and footer still visible.
+  - Header and breadcrumbs still visible.
   - Concertina region shows only **one panel at a time**:
     - The **current (rightmost) panel** is shown.
     - Users move back using the breadcrumb trail (or a built-in back affordance within the concertina shell).
@@ -79,16 +72,19 @@ At a conceptual level, the navigation stack is:
    - Tiles representing repository categories that have configured repositories (derived entirely from the backend’s repo catalogue such as `repoxy/conf/repoxy.yaml`, e.g. Docker, Terraform, OpenTofu).  
    - Repo types that have **no configured instances** are hidden; the UI is a direct reflection of configuration.
 
-2. **Repository Browser Panel** (per repository type)  
-   - Left side: **Folder Tree View** whose **top-level nodes are repository names** within the chosen type (for the example config: `dockerhub`, `github`, `terraform-hashicorp`, `opentofu-registry`).  
+2. **Folder Browser Panel** (per repository type)  
+   - Hosts the **Folder Tree View** whose **top-level nodes are repository names** within the chosen type (for the example config: `dockerhub`, `github`, `terraform-hashicorp`, `opentofu-registry`).  
    - Each repository instance has three **fixed levels** beneath it before files appear:
      1. `host`
      2. `group`
      3. `name`
    - Only the `name` folders contain files; higher levels contain folders only.
-   - Right side: **File List Table** (files in the selected `name` folder).
 
-3. **File Details Panel**  
+3. **File List Panel**  
+   - Shows the **File List Table** for the currently selected folder (`name` level).
+   - Updates automatically when the user selects a folder in the Folder Browser Panel.
+
+4. **File Details Panel**  
    - Detailed view for a single selected file.
 
 The root of the app is effectively the **Repository Types** panel. There is no panel “above” it in the stack.
@@ -183,12 +179,12 @@ Details of the settings dialog are in `panels/24_ui_panel_settings_dialog.md` an
 - `components/22_ui_component_tile_grid.md`
 - `components/22_ui_component_folder_tree_view.md`
 - `components/22_ui_component_file_list_table.md`
-- `components/22_ui_component_footer_summary_bar.md`
 - `components/22_ui_component_toast.md`
 - `components/22_ui_component_toast_queue.md`
 - `components/22_ui_component_settings_dialog.md`
 - `components/22_ui_component_draggable_divider.md`
 - `components/22_ui_component_live_update_subscription.md`
+- `components/22_ui_component_panel_title.md`
 - `28_ui_post_mvp.md` — post-MVP UI roadmap and out-of-scope features.
 
 These markdown files should be sufficient for another LLM or engineer to implement the UI without needing to repeat this interview.

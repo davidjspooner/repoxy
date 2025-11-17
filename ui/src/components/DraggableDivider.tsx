@@ -39,12 +39,24 @@ export function DraggableDivider({ onResize }: DraggableDividerProps) {
       tabIndex={0}
       onMouseDown={handleMouseDown}
       sx={{
-        width: '6px',
+        width: '12px',
         cursor: 'col-resize',
         backgroundColor: '#1f2a36',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         '&:hover': { backgroundColor: '#2c3947' },
       }}
-    />
+    >
+      <Box
+        sx={{
+          width: '4px',
+          height: '40px',
+          borderRadius: '999px',
+          backgroundColor: '#6b7684',
+        }}
+      />
+    </Box>
   );
 }
 

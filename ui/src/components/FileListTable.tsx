@@ -13,12 +13,13 @@ import type { FileRow } from './types';
 
 export interface FileListTableProps {
   rows: FileRow[];
+  selectedFileId?: string | null;
   onSelect?: (row: FileRow) => void;
 }
 
 type SortKey = 'name' | 'modified' | 'sizeBytes';
 
-export function FileListTable({ rows, onSelect }: FileListTableProps) {
+export function FileListTable({ rows, onSelect, selectedFileId }: FileListTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
 
@@ -68,7 +69,13 @@ export function FileListTable({ rows, onSelect }: FileListTableProps) {
         </TableHead>
         <TableBody>
           {sortedRows.map((row) => (
-            <TableRow key={row.id} hover sx={{ cursor: 'pointer' }} onClick={() => onSelect?.(row)}>
+            <TableRow
+              key={row.id}
+              hover
+              selected={row.id === selectedFileId}
+              sx={{ cursor: 'pointer' }}
+              onClick={() => onSelect?.(row)}
+            >
               <TableCell>{row.name}</TableCell>
               <TableCell>{row.modified}</TableCell>
               <TableCell align="right">{formatBytes(row.sizeBytes)}</TableCell>

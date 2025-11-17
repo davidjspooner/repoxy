@@ -6,11 +6,18 @@ import type { RepoType } from './types';
 
 export interface RepoTypeTileProps {
   repoType: RepoType;
+  selected?: boolean;
 }
 
-export function RepoTypeTile({ repoType }: RepoTypeTileProps) {
+export function RepoTypeTile({ repoType, selected }: RepoTypeTileProps) {
   return (
-    <Card elevation={1}>
+    <Card
+      elevation={selected ? 6 : 1}
+      sx={{
+        border: selected ? '2px solid #4c8bf5' : '1px solid rgba(0,0,0,0.2)',
+        transition: 'border 0.2s ease, box-shadow 0.2s ease',
+      }}
+    >
       <CardActionArea onClick={repoType.onSelect} sx={{ height: '100%' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>

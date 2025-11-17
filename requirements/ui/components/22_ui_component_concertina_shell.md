@@ -13,7 +13,7 @@ The **core layout/flow controller** for panels.
 
 ## Structure
 
-Within the area below the header and above the footer:
+Within the area below the header and above the bottom edge of the viewport:
 
 1. **Breadcrumb Bar** (top area of the shell).
 2. **Visible Panels Region**:
@@ -54,6 +54,7 @@ Threshold for determining “wide” vs “narrow” is implementation-specific.
 
 - Each visible panel is wrapped in a `PanelContainer` with its own vertical (and optional horizontal) scrolling.
 - The Concertina Shell **does not** handle scrolling directly; it just arranges panel containers side by side.
+- Shell container flexes to fill the space between the header and the bottom of the viewport, with square corners and an optional accent border (e.g. 2 px) to visually separate it from the background.
 
 ## Live Updates & Deletion Handling
 

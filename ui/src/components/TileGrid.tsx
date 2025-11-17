@@ -1,4 +1,5 @@
-import Grid from '@mui/material/Unstable_Grid2';
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { Children } from 'react';
 import type { ReactNode } from 'react';
 
@@ -7,13 +8,14 @@ export interface TileGridProps {
 }
 
 export function TileGrid({ children }: TileGridProps) {
+  const items = Children.toArray(children);
   return (
-    <Grid container spacing={2}>
-      {Children.map(children, (child, index) => (
-        <Grid key={index} xs={12} sm={6} md={4} lg={3}>
+    <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap flexBasis={260} alignItems="stretch">
+      {items.map((child, index) => (
+        <Box key={index} sx={{ flex: '0 0 260px', maxWidth: '100%' }}>
           {child}
-        </Grid>
+        </Box>
       ))}
-    </Grid>
+    </Stack>
   );
 }

@@ -21,37 +21,51 @@ export interface FileDetailsPanelProps {
 }
 
 export function FileDetailsPanel({ title, subtitle, metadata, usage = [], loading, error }: FileDetailsPanelProps) {
+  const wrapperStyle = {
+    backgroundColor: '#e3f2fd',
+    display: 'inline-flex',
+    flexDirection: 'column',
+    minHeight: 'max-content',
+    minWidth: 'max-content',
+  } as const;
+
   if (loading) {
     return (
-      <Typography variant="body2" color="text.secondary">
-        Loading file details…
-      </Typography>
+        <Box sx={wrapperStyle}>
+          <Typography variant="body2" color="text.secondary">
+            Loading file details…
+          </Typography>
+        </Box>
     );
   }
 
   if (error) {
     return (
-      <Typography variant="body2" color="error">
-        {error}
-      </Typography>
+        <Box sx={wrapperStyle}>
+          <Typography variant="body2" color="error">
+            {error}
+          </Typography>
+        </Box>
     );
   }
 
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h5" gutterBottom>
-          {title}
-        </Typography>
-        {subtitle ? (
-          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-            {subtitle}
+    <Box sx={wrapperStyle}>
+      <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ flex: 1, overflow: 'auto' }}>
+          <Typography variant="h5" gutterBottom>
+            {title}
           </Typography>
-        ) : null}
-        <Section heading="Metadata" fields={metadata} />
-        {usage.length ? <Section heading="Usage" fields={usage} /> : null}
-      </CardContent>
-    </Card>
+          {subtitle ? (
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              {subtitle}
+            </Typography>
+          ) : null}
+          <Section heading="Metadata" fields={metadata} />
+          {usage.length ? <Section heading="Usage" fields={usage} /> : null}
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
 

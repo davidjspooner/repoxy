@@ -17,7 +17,7 @@ export function BreadcrumbBar({ items }: BreadcrumbBarProps) {
     <Breadcrumbs
       separator={<NavigateNextIcon fontSize="small" />}
       aria-label="breadcrumb"
-      sx={{ padding: 1 }}
+      sx={{ '& .MuiBreadcrumbs-li': { fontSize: 14 } }}
     >
       {items.map((item) =>
         item.isCurrent ? (

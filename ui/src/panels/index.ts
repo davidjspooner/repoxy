@@ -1,5 +1,6 @@
 export * from './RootPanel';
 export * from './RepositoryTypesPanel';
-export * from './RepositoryBrowserPanel';
+export * from './FolderBrowserPanel';
+export * from './FileListPanel';
 export * from './FileDetailsPanel';
 export * from './SettingsDialogPanel';

@@ -13,8 +13,7 @@ Displays the **current navigation path** across panels.
 
 ## Placement
 
-- Directly below the Header Bar.
-- Part of the **Concertina Shell** (not individual panels).
+- Rendered inside the **Header Bar** so navigation is always visible even when panels scroll.
 
 ## Behaviour
 
@@ -32,4 +31,3 @@ Displays the **current navigation path** across panels.
     - Truncate intermediate segments.
     - Collapse into a shorter form with an overflow indicator (e.g. `Docker / … / v1 / manifest.json`).
 - Full breadcrumb state should remain available via tooltip or expansion.
-

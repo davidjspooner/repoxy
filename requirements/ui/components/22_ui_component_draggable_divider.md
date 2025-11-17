@@ -12,7 +12,7 @@ Vertical divider between two visible panels in the Concertina Shell (desktop onl
 
 - Visible only when **two panels** are rendered side by side (desktop/wide layout).
 - Grabbable affordance:
-  - Clearly visible handle area (e.g. dots or lines).
+  - Clearly visible handle area (e.g. a pill-shaped grip centered inside a wider divider track) so the separator stands out against panel backgrounds.
 - Dragging:
   - Horizontal drag adjusts the flex/width of left and right panels.
   - Constraints:
@@ -21,4 +21,3 @@ Vertical divider between two visible panels in the Concertina Shell (desktop onl
 
 - On mobile/narrow:
   - Divider is hidden and inactive; only a single panel is rendered.
-

@@ -10,10 +10,7 @@ Layout component for arranging tiles such as `RepoTypeTile`.
 
 ## Behaviour
 
-- Desktop:
-  - Multi-column grid.
-- Mobile:
-  - One or two columns depending on screen width.
+- Uses **fixed-width tiles** (≈260 px) and allows them to wrap naturally as the viewport changes.
+- Does not assume a fixed number of columns; instead tiles flow across each row while maintaining constant width and spacing.
 
 The Tile Grid is a simple layout helper; all semantics and actions belong to the child tiles.
-

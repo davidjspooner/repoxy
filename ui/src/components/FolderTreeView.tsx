@@ -8,14 +8,15 @@ import type { FolderNode } from './types';
 
 export interface FolderTreeViewProps {
   nodes: FolderNode[];
+  selectedId?: string | null;
   onSelect?: (node: FolderNode) => void;
 }
 
-export function FolderTreeView({ nodes, onSelect }: FolderTreeViewProps) {
+export function FolderTreeView({ nodes, selectedId, onSelect }: FolderTreeViewProps) {
   return (
     <List dense disablePadding>
       {nodes.map((node) => (
-        <FolderTreeNode key={node.id} node={node} onSelect={onSelect} depth={0} />
+        <FolderTreeNode key={node.id} node={node} onSelect={onSelect} depth={0} selectedId={selectedId} />
       ))}
     </List>
   );
@@ -24,16 +25,18 @@ export function FolderTreeView({ nodes, onSelect }: FolderTreeViewProps) {
 interface FolderTreeNodeProps {
   node: FolderNode;
   depth: number;
+  selectedId?: string | null;
   onSelect?: (node: FolderNode) => void;
 }
 
-function FolderTreeNode({ node, depth, onSelect }: FolderTreeNodeProps) {
+function FolderTreeNode({ node, depth, onSelect, selectedId }: FolderTreeNodeProps) {
   const [open, setOpen] = useState(true);
   const hasChildren = Boolean(node.children?.length);
 
   return (
     <>
       <ListItemButton
+        selected={node.id === selectedId}
         sx={{ pl: depth * 2 }}
         onClick={() => {
           if (hasChildren) {
@@ -49,7 +52,7 @@ function FolderTreeNode({ node, depth, onSelect }: FolderTreeNodeProps) {
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
             {node.children!.map((child) => (
-              <FolderTreeNode key={child.id} node={child} onSelect={onSelect} depth={depth + 1} />
+              <FolderTreeNode key={child.id} node={child} onSelect={onSelect} depth={depth + 1} selectedId={selectedId} />
             ))}
           </List>
         </Collapse>

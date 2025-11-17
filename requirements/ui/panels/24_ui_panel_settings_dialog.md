@@ -18,7 +18,7 @@ A modal dialog for **personalisation and basic UI settings**.
 
 - Modal dialog overlay centered in the viewport.
 - Background:
-  - The main UI (header, panels, footer) is dimmed and made non-interactive.
+  - The main UI (header and panels) is dimmed and made non-interactive.
 - Content sections:
   1. **Density Settings**
      - Radio buttons or segmented control:
