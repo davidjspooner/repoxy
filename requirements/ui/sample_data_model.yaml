@@ -6,8 +6,8 @@ meta:
 
 repository_types:
   - type: docker
-    label: Docker / OCI
-    description: Container images mirrored from upstream registries.
+    label: Containers
+    description: Container images served via pull-through caches of upstream or local/private registries.
     repos:
       - name: dockerhub
         display_name: Docker Hub (registry-1.docker.io)
@@ -77,11 +77,11 @@ repository_types:
                         last_accessed: 2025-05-18T11:20:00Z
 
   - type: terraform
-    label: Terraform Providers
-    description: Providers mirrored from registry.terraform.io.
+    label: Terraform
+    description: Providers delivered by pull-through caches of registry.terraform.io or private catalogs.
     repos:
       - name: terraform-hashicorp
-        display_name: HashiCorp Registry
+        display_name: Upstream provider catalog
         hosts:
           - host: registry.terraform.io
             last_updated: 2025-05-18T08:22:00Z
@@ -112,11 +112,11 @@ repository_types:
                         last_accessed: 2025-05-18T10:05:11Z
 
   - type: tofu
-    label: OpenTofu Providers
-    description: Providers mirrored from registry.opentofu.org.
+    label: OpenTofu
+    description: Providers delivered by pull-through caches of registry.opentofu.org or private catalogs.
     repos:
       - name: opentofu-registry
-        display_name: OpenTofu Registry
+        display_name: Upstream provider catalog
         hosts:
           - host: registry.opentofu.org
             last_updated: 2025-05-16T16:05:00Z

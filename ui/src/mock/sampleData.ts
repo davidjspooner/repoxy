@@ -51,8 +51,8 @@ export const sampleData: SampleData = {
   repository_types: [
     {
       type: 'docker',
-      label: 'Docker / OCI',
-      description: 'Container images mirrored from upstream registries.',
+      label: 'Containers',
+      description: 'Container images served via pull-through caches of upstream or private registries.',
       repos: [
         {
           name: 'dockerhub',
@@ -166,12 +166,12 @@ export const sampleData: SampleData = {
     },
     {
       type: 'terraform',
-      label: 'Terraform Providers',
-      description: 'Providers mirrored from registry.terraform.io.',
+      label: 'Terraform',
+      description: 'Providers delivered from pull-through caches of registry.terraform.io or private catalogs.',
       repos: [
         {
           name: 'terraform-hashicorp',
-          display_name: 'HashiCorp Registry',
+          display_name: 'Upstream provider catalog',
           hosts: [
             {
               host: 'registry.terraform.io',
@@ -208,6 +208,49 @@ export const sampleData: SampleData = {
                           },
                           download_count: 34,
                           last_accessed: '2025-05-18T10:05:11Z',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'tofu',
+      label: 'OpenTofu',
+      description: 'Providers delivered from pull-through caches of registry.opentofu.org or private catalogs.',
+      repos: [
+        {
+          name: 'opentofu-registry',
+          display_name: 'Upstream provider catalog',
+          hosts: [
+            {
+              host: 'registry.opentofu.org',
+              last_updated: '2025-05-16T16:05:00Z',
+              groups: [
+                {
+                  group: 'opentofu',
+                  last_updated: '2025-05-16T16:04:00Z',
+                  names: [
+                    {
+                      name: 'example',
+                      last_updated: '2025-05-16T16:03:30Z',
+                      files: [
+                        {
+                          file: 'metadata.json',
+                          path: 'tofu/opentofu-registry/opentofu/example/metadata.json',
+                          size_bytes: 768,
+                          modified: '2025-05-16T16:03:25Z',
+                          content_type: 'application/json',
+                          checksums: {
+                            sha256: '7777777777777777777777777777777777777777777777777777777777777777',
+                          },
+                          download_count: 4,
+                          last_accessed: '2025-05-17T12:00:00Z',
                         },
                       ],
                     },

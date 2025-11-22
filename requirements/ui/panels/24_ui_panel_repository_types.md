@@ -21,6 +21,8 @@ Only types that actually have **data** are shown in the MVP.
 - **Parent:** Root (conceptual).
 - **Children:** Repository Browser Panel (for the selected repository type).
 
+See `../22_ui_panel_flow.md` for how this panel sits in the concertina stack (single vs paired slots) and which panels follow it.
+
 ## Layout & Contents
 
 - Main content is a **grid or list of tiles**, each rendered via the `RepoTypeTile` component (`../components/22_ui_component_repo_type_tile.md`).

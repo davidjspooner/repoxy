@@ -4,9 +4,17 @@ import Toolbar from '@mui/material/Toolbar';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import './app.css';
-import type { PanelDescriptor, BreadcrumbItem, RepoType, FolderNode, FileRow, ToastMessage } from './components';
+import type {
+  PanelDescriptor,
+  BreadcrumbItem,
+  RepoType,
+  FileRow,
+  ToastMessage,
+  RepoItem,
+  RepoItemVersion,
+} from './components';
 import { HeaderBar, ConcertinaShell, ToastQueue, SettingsDialog, FloatingDebugButton } from './components';
-import { RepositoryTypesPanel, FolderBrowserPanel, FileListPanel, FileDetailsPanel } from './panels';
+import { RepositoryTypesPanel, RepoInstancesPanel, ItemListPanel, VersionListPanel, FileListPanel, FileDetailsPanel } from './panels';
 import {
   sampleData,
   type SampleRepoType,
@@ -16,15 +24,11 @@ import {
 } from './mock/sampleData';
 
 interface BuiltRepoData {
-  folders: FolderNode[];
-  filesByFolderId: Record<string, FileRow[]>;
+  items: RepoItem[];
+  versionsByItemId: Record<string, RepoItemVersion[]>;
+  versionsById: Record<string, RepoItemVersion>;
+  filesByVersionId: Record<string, FileRow[]>;
   fileMeta: Record<string, FileDetail>;
-  folderMeta: Record<string, FolderMeta>;
-}
-
-interface FolderMeta {
-  path: string[];
-  label: string;
 }
 
 interface FileDetail {
@@ -49,16 +53,30 @@ export default function App() {
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>(sampleData.toasts);
 
   const repoTypeMap = useMemo(() => new Map(sampleData.repository_types.map((type) => [type.type, type])), []);
   const selectedType = selectedTypeId ? repoTypeMap.get(selectedTypeId) ?? null : null;
+  const selectedRepo =
+    selectedType && selectedRepoId ? selectedType.repos.find((repo) => repo.name === selectedRepoId) ?? null : null;
 
-  const builtRepo = useMemo(() => (selectedType ? buildRepoData(selectedType) : null), [selectedType]);
+  const builtRepo = useMemo(
+    () => (selectedType && selectedRepo ? buildRepoData(selectedType, selectedRepo) : null),
+    [selectedType, selectedRepo],
+  );
 
-  const folderFiles = selectedFolderId && builtRepo ? builtRepo.filesByFolderId[selectedFolderId] ?? [] : [];
+  const items = builtRepo?.items ?? [];
+  const selectedItem = selectedItemId ? items.find((item) => item.id === selectedItemId) ?? null : null;
+  const versionsForItem =
+    selectedItemId && builtRepo ? builtRepo.versionsByItemId[selectedItemId] ?? [] : [];
+  const selectedVersion =
+    selectedVersionId && builtRepo ? builtRepo.versionsById[selectedVersionId] ?? null : null;
+  const versionFiles =
+    selectedVersionId && builtRepo ? builtRepo.filesByVersionId[selectedVersionId] ?? [] : [];
   const selectedFile = selectedFileId && builtRepo ? builtRepo.fileMeta[selectedFileId] ?? null : null;
 
   const repoTypes: RepoType[] = sampleData.repository_types.map((type) => ({
@@ -67,49 +85,96 @@ export default function App() {
     description: type.description,
     onSelect: () => {
       setSelectedTypeId(type.type);
-      setSelectedFolderId(null);
+      setSelectedRepoId(null);
+      setSelectedItemId(null);
+      setSelectedVersionId(null);
       setSelectedFileId(null);
     },
   }));
 
-  const panels: PanelDescriptor[] = [
-    {
+  const panels: PanelDescriptor[] = [];
+
+  if (!selectedType) {
+    panels.push({
       id: 'repository-types',
       title: 'Repoxy',
       content: <RepositoryTypesPanel repoTypes={repoTypes} selectedId={selectedTypeId} />,
-    },
-  ];
+      mobileVisible: true,
+    });
+  } else if (!selectedRepo) {
+    const repoTiles: RepoType[] = selectedType.repos.map((repo) => ({
+      id: repo.name,
+      label: repo.display_name,
+      description: 'Routes requests through Repoxy for this repository.',
+      onSelect: () => {
+        setSelectedRepoId(repo.name);
+        setSelectedItemId(null);
+        setSelectedVersionId(null);
+        setSelectedFileId(null);
+      },
+    }));
 
-  if (selectedType && builtRepo) {
     panels.push({
-      id: `folders-${selectedType.type}`,
-      title: `${selectedType.label} Folders`,
+      id: `repos-${selectedType.type}`,
+      title: `${selectedType.label} Repositories`,
       content: (
-        <FolderBrowserPanel
-          folders={builtRepo.folders}
-          selectedFolderId={selectedFolderId}
-          onFolderSelect={(node) => {
-            setSelectedFolderId(node.id);
+        <RepoInstancesPanel repos={repoTiles} selectedId={selectedRepoId} />
+      ),
+      mobileVisible: true,
+    });
+  } else if (builtRepo) {
+    panels.push({
+      id: `items-${selectedRepo.name}`,
+      title: `${selectedRepo.display_name} Items`,
+      content: (
+        <ItemListPanel
+          items={builtRepo.items}
+          selectedItemId={selectedItemId}
+          onItemSelect={(item) => {
+            setSelectedItemId(item.id);
+            setSelectedVersionId(null);
             setSelectedFileId(null);
           }}
         />
       ),
+      mobileVisible: !selectedItemId,
     });
 
-    panels.push({
-      id: `files-${selectedType.type}`,
-      title: `${selectedType.label} Files`,
-      content: (
-        <FileListPanel
-          files={folderFiles}
-          selectedFileId={selectedFileId}
-          onFileSelect={(row) => setSelectedFileId(row.id)}
-          emptyFilesMessage={
-            selectedFolderId ? 'No files in this folder.' : 'Select a folder on the left to view files.'
-          }
-        />
-      ),
-    });
+    if (selectedItemId) {
+      panels.push({
+        id: `versions-${selectedItemId}`,
+        title: `${selectedRepo.display_name} Versions`,
+        content: (
+          <VersionListPanel
+            versions={versionsForItem}
+            selectedVersionId={selectedVersionId}
+            onVersionSelect={(version) => {
+              setSelectedVersionId(version.id);
+              setSelectedFileId(null);
+            }}
+          />
+        ),
+        mobileVisible: true,
+      });
+
+      if (selectedVersionId) {
+        panels.push({
+          id: `files-${selectedVersionId}`,
+          title: `${selectedRepo.display_name} Files`,
+          content: (
+            <FileListPanel
+              files={versionFiles}
+              selectedFileId={selectedFileId}
+              onFileSelect={(row) => setSelectedFileId(row.id)}
+              emptyFilesMessage={
+                selectedVersionId ? 'No files for this version.' : 'Select a version to view files.'
+              }
+            />
+          ),
+          mobileVisible: true,
+        });
+      }
+    }
   }
 
   if (selectedFile) {
@@ -133,6 +198,7 @@ export default function App() {
           ]}
         />
       ),
+      mobileVisible: true,
     });
   }
 
@@ -142,7 +208,9 @@ export default function App() {
       label: 'Repoxy',
       onSelect: () => {
         setSelectedTypeId(null);
-        setSelectedFolderId(null);
+        setSelectedRepoId(null);
+        setSelectedItemId(null);
+        setSelectedVersionId(null);
         setSelectedFileId(null);
       },
       isCurrent: !selectedType,
@@ -154,7 +222,47 @@ export default function App() {
       id: `crumb-${selectedType.type}`,
       label: selectedType.label,
       onSelect: () => {
-        setSelectedFolderId(null);
+        setSelectedRepoId(null);
+        setSelectedItemId(null);
+        setSelectedVersionId(null);
+        setSelectedFileId(null);
+      },
+      isCurrent: !selectedRepo,
+    });
+  }
+
+  if (selectedType && selectedRepo) {
+    breadcrumbs.push({
+      id: `crumb-${selectedType.type}-${selectedRepo.name}`,
+      label: selectedRepo.display_name,
+      onSelect: () => {
+        setSelectedItemId(null);
+        setSelectedVersionId(null);
+        setSelectedFileId(null);
+      },
+      isCurrent: !selectedItem,
+    });
+  }
+
+  if (selectedItem && selectedRepo) {
+    breadcrumbs.push({
+      id: `crumb-item-${selectedItem.id}`,
+      label: selectedItem.label,
+      onSelect: () => {
+        setSelectedItemId(null);
+        setSelectedVersionId(null);
+        setSelectedFileId(null);
+      },
+      isCurrent: !selectedVersion,
+    });
+  }
+
+  if (selectedVersion) {
+    breadcrumbs.push({
+      id: `crumb-version-${selectedVersion.id}`,
+      label: selectedVersion.label,
+      onSelect: () => {
+        setSelectedVersionId(null);
         setSelectedFileId(null);
       },
       isCurrent: !selectedFile,
@@ -218,71 +326,50 @@ export default function App() {
   );
 }
 
-function buildRepoData(repoType: SampleRepoType): BuiltRepoData {
-  const folders: FolderNode[] = [];
-  const filesByFolderId: Record<string, FileRow[]> = {};
+function buildRepoData(repoType: SampleRepoType, repo: SampleRepo): BuiltRepoData {
+  const items: RepoItem[] = [];
+  const versionsByItemId: Record<string, RepoItemVersion[]> = {};
+  const versionsById: Record<string, RepoItemVersion> = {};
+  const filesByVersionId: Record<string, FileRow[]> = {};
   const fileMeta: Record<string, FileDetail> = {};
-  const folderMeta: Record<string, FolderMeta> = {};
 
-  for (const repo of repoType.repos) {
-    const repoNode: FolderNode = {
-      id: `repo:${repoType.type}:${repo.name}`,
-      name: repo.display_name,
-      children: [],
-      meta: { path: [repo.display_name] },
-    };
-    folderMeta[repoNode.id] = { path: [repo.display_name], label: repo.display_name };
-
-    for (const host of repo.hosts) {
-      const hostNode: FolderNode = {
-        id: `${repoNode.id}:host:${host.host}`,
-        name: host.host,
-        children: [],
-        meta: { path: [repo.display_name, host.host] },
-      };
-      folderMeta[hostNode.id] = { path: [repo.display_name, host.host], label: host.host };
-
-      for (const group of host.groups) {
-        const groupNode: FolderNode = {
-          id: `${hostNode.id}:group:${group.group}`,
-          name: group.group,
-          children: [],
-          meta: { path: [repo.display_name, host.host, group.group] },
+  for (const host of repo.hosts) {
+    for (const group of host.groups) {
+      for (const nameEntry of group.names) {
+        const itemId = `item:${repoType.type}:${repo.name}:${host.host}:${group.group}:${nameEntry.name}`;
+        const item: RepoItem = {
+          id: itemId,
+          label: `${group.group}/${nameEntry.name}`,
+          description: host.host,
+          path: [repo.display_name, host.host, group.group, nameEntry.name],
         };
-        folderMeta[groupNode.id] = { path: [repo.display_name, host.host, group.group], label: group.group };
+        items.push(item);
 
-        for (const nameEntry of group.names) {
-          const nameNodeId = `${groupNode.id}:name:${nameEntry.name}`;
-          const nameNode: FolderNode = {
-            id: nameNodeId,
-            name: nameEntry.name,
-            children: [],
-            meta: { path: [repo.display_name, host.host, group.group, nameEntry.name] },
-          };
-          folderMeta[nameNode.id] = {
-            path: [repo.display_name, host.host, group.group, nameEntry.name],
-            label: nameEntry.name,
-          };
+        const versionId = `${itemId}:latest`;
+        const versionLabel = nameEntry.last_updated
+          ? `Latest • ${new Date(nameEntry.last_updated).toLocaleDateString()}`
+          : 'Latest';
+        const version: RepoItemVersion = {
+          id: versionId,
+          itemId,
+          label: versionLabel,
+          description: `Updated ${nameEntry.last_updated ?? 'recently'}`,
+        };
+        versionsByItemId[itemId] = [version];
+        versionsById[versionId] = version;
 
-          filesByFolderId[nameNode.id] = nameEntry.files.map((file) => transformFile(repoType, repo, nameEntry, file));
-          for (const file of nameEntry.files) {
-            const detail = buildFileDetail(repoType, repo, nameEntry, file);
-            fileMeta[detail.id] = detail;
-          }
-
-          groupNode.children!.push(nameNode);
-        }
-
-        hostNode.children!.push(groupNode);
+        const fileRows = nameEntry.files.map((file) => {
+          const row = transformFile(repoType, repo, nameEntry, file);
+          const detail = buildFileDetail(repoType, repo, nameEntry, file);
+          fileMeta[detail.id] = detail;
+          return row;
+        });
+        filesByVersionId[versionId] = fileRows;
       }
-
-      repoNode.children!.push(hostNode);
     }
-
-    folders.push(repoNode);
   }
 
-  return { folders, filesByFolderId, fileMeta, folderMeta };
+  return { items, versionsByItemId, versionsById, filesByVersionId, fileMeta };
 }
 
 function transformFile(repoType: SampleRepoType, repo: SampleRepo, nameEntry: SampleNameEntry, file: SampleFile): FileRow {

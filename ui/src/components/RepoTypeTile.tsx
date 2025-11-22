@@ -16,10 +16,21 @@ export function RepoTypeTile({ repoType, selected }: RepoTypeTileProps) {
       sx={{
         border: selected ? '2px solid #4c8bf5' : '1px solid rgba(0,0,0,0.2)',
         transition: 'border 0.2s ease, box-shadow 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 150,
       }}
     >
       <CardActionArea onClick={repoType.onSelect} sx={{ height: '100%' }}>
-        <CardContent>
+        <CardContent
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            justifyContent: 'space-between',
+            gap: 1,
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             {repoType.label}
           </Typography>

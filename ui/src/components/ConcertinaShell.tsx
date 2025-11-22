@@ -19,7 +19,8 @@ export function ConcertinaShell({ panels }: ConcertinaShellProps) {
   }
 
   if (isMobile || panels.length === 1) {
-    const panel = panels[panels.length - 1];
+    const panel =
+      [...panels].reverse().find((p) => p.mobileVisible !== false) ?? panels[panels.length - 1];
     return (
       <Box
         className="concertina-shell concertina-shell-single"

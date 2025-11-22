@@ -1,7 +1,8 @@
 
 # Component: Concertina Shell
 
-The **core layout/flow controller** for panels.
+The **core layout/flow controller** for panels.  
+Canonical navigation sequences and slot assignments are summarized in `../22_ui_panel_flow.md`; this component doc focuses on mechanics.
 
 ## Responsibilities
 

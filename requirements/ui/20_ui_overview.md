@@ -45,6 +45,7 @@ From top to bottom, the screen is structured as:
 2. **Concertina Shell (Panel Region)**  
    - Immediately below the header.
    - Contains the **panel containers** (one or two visible at a time) and the draggable divider on wide screens.
+   - See `22_ui_panel_flow.md` for the canonical sequence of panels, their slot assignments, and stack transitions.
 
 ### Desktop vs Mobile
 

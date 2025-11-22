@@ -18,7 +18,7 @@ const CLICK_THRESHOLD = 5;
 export function FloatingDebugButton({
   message = 'Debug clicked',
   onClick,
-  initialPosition = { x: 24, y: 24 },
+  initialPosition = { x: 24, y: typeof window !== 'undefined' ? window.innerHeight - 72 : 24 },
 }: FloatingDebugButtonProps) {
   const [position, setPosition] = useState<Position>(initialPosition);
   const [isDragging, setIsDragging] = useState(false);

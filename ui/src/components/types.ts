@@ -11,13 +11,11 @@ export interface PanelDescriptor {
   id: string;
   title: string;
   content: React.ReactNode;
-}
-
-export interface FolderNode {
-  id: string;
-  name: string;
-  children?: FolderNode[];
-  meta?: Record<string, unknown>;
+  /**
+   * When false, the panel is skipped when selecting the single visible panel on mobile.
+   * Defaults to true.
+   */
+  mobileVisible?: boolean;
 }
 
 export interface FileRow {
@@ -26,6 +24,20 @@ export interface FileRow {
   modified: string;
   sizeBytes: number;
   path?: string;
+}
+
+export interface RepoItem {
+  id: string;
+  label: string;
+  description?: string;
+  path: string[];
+}
+
+export interface RepoItemVersion {
+  id: string;
+  itemId: string;
+  label: string;
+  description?: string;
 }
 
 export interface ToastMessage {
@@ -39,4 +51,11 @@ export interface RepoType {
   label: string;
   description?: string;
   onSelect?: () => void;
+}
+
+export interface FolderNode {
+  id: string;
+  name: string;
+  children?: FolderNode[];
+  meta?: Record<string, unknown>;
 }

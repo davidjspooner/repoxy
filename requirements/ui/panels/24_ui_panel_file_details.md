@@ -14,6 +14,8 @@ Shows detailed information about a single file.
 - **Parent:** Repository Browser Panel.
 - **Children:** None in MVP (no further drill-down).
 
+Refer to `../22_ui_panel_flow.md` for how the File Details panel is positioned in the stack (mobile vs desktop slots) and how it is added/removed when users change selections.
+
 ## Layout & Contents
 
 The File Details panel is a **single-column details layout**. Typical sections:
@@ -70,4 +72,3 @@ The File Details panel itself does **not** provide an explicit “Back” button
     - Pops File Details.
     - Shows the Repository Browser panel as the active panel.
   - A toast may be used to indicate that the file no longer exists.
-

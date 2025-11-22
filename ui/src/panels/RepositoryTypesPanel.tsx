@@ -2,8 +2,8 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import type { RepoType } from '../components';
-import { RepoTypeTile, TileGrid } from '../components';
+import type { RepoType, ListPanelItem } from '../components';
+import { ListPanel } from '../components';
 
 export interface RepositoryTypesPanelProps {
   repoTypes: RepoType[];
@@ -18,7 +18,7 @@ export function RepositoryTypesPanel({
   selectedId,
   loading,
   error,
-  emptyMessage = 'No cached repositories available.',
+  emptyMessage = 'No matches.',
 }: RepositoryTypesPanelProps) {
   if (loading) {
     return (
@@ -44,11 +44,21 @@ export function RepositoryTypesPanel({
     );
   }
 
+  const items: ListPanelItem[] = repoTypes.map((repo) => ({
+    id: repo.id,
+    title: repo.label,
+    detail: repo.description,
+  }));
+
+  const repoById = new Map(repoTypes.map((repo) => [repo.id, repo]));
+
   return (
-    <TileGrid>
-      {repoTypes.map((repo) => (
-        <RepoTypeTile key={repo.id} repoType={repo} selected={selectedId === repo.id} />
-      ))}
-    </TileGrid>
+    <ListPanel
+      items={items}
+      selectedId={selectedId ?? undefined}
+      onSelect={(item) => repoById.get(item.id)?.onSelect?.()}
+      initialMode="tiles"
+      emptyMessage={emptyMessage}
+    />
   );
 }

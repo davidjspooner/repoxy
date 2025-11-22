@@ -2,7 +2,8 @@
 # Panel Catalogue & Navigation
 
 This document describes each **panel** (screen/major view) and how they connect.  
-Panel stacking behaviour and transitions are handled by the **Concertina Shell** (see `components/22_ui_component_concertina_shell.md`) and **not** by individual panels.
+Panel stacking behaviour and transitions are handled by the **Concertina Shell** (see `components/22_ui_component_concertina_shell.md`) and **not** by individual panels.  
+For the authoritative description of how panels push/pop, which slot they occupy, and how the flow adapts to viewport size, refer to `../22_ui_panel_flow.md`.
 
 ---
 

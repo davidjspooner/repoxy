@@ -1,105 +1,66 @@
 
-# Repository Browser Panel
+# Item & Version Browser Panel
 
-Displays the **folder tree and files** for a specific repository type (and possibly specific repository instance) in a single panel.
+Displays the **item list and version list** for a specific repository instance before handing off to the file list and file details panels.
 
 ## Purpose
 
 - Allow users to:
-  - Navigate the **folder hierarchy** (left).
-  - View and sort **files within the selected folder** (right).
-  - Select a file to open the File Details panel.
+  - Browse the list of **items/containers/packages** exposed by the chosen repository (examples: `library/nginx`, `hashicorp/aws`).
+  - Inspect the **available versions/tags/releases** for a selected item.
+  - Select a version to continue to the File List panel (which then leads to File Details).
 
 ## Parent / Children
 
-- **Parent:** Repository Types Panel.
-- **Child:** File Details Panel.
+- **Parent:** Repository Instances Panel (repository selection).
+- **Children:** Version List Panel → File List Panel → File Details Panel.
+
+Stack placement, slot usage, and transitions between the Item/Version panel, File List, and File Details panels are detailed in `../22_ui_panel_flow.md`.
 
 ## Layout
 
-Within this **single panel**, we have a **two-column layout** managed by the panel’s internal layout (not the Concertina Shell). Each column begins with a lightweight heading (e.g. “Folder Tree”, “Files”) so users instantly see which context they are in.
+The panel occupies one concertina slot at a time, but conceptually forms a **two-step list experience**:
 
-1. **Left Column – Folder Tree (FolderTreeView component)**  
-   - Displays **folders only**.
-   - **Top-level nodes are repository names** scoped to the selected type (only repos defined for that type are shown).  
-     Example using `repoxy/conf/repoxy.yaml`:
-       - Selecting the Docker tile shows `dockerhub` and `github` as the first expandable nodes.
-       - Selecting the Terraform tile shows `terraform-hashicorp`; OpenTofu shows `opentofu-registry`.
-   - Each repository instance exposes three mandatory folder levels beneath it:
-     1. `host`
-     2. `group`
-     3. `name`
-   - Folders at the `host` and `group` levels only contain subfolders; `name` folders contain files (and no further folders).
-   - Mapping examples:
-     - **Docker/OCI:** `host` = registry hostname (e.g. `registry-1.docker.io`), `group` = namespace/org (e.g. `library`, `davidjspooner`), `name` = image name/tag combination (e.g. `nginx`, `repoxy`).
-     - **Terraform/OpenTofu:** `host` = upstream registry (e.g. `registry.terraform.io`, `registry.opentofu.org`), `group` = publisher (e.g. `hashicorp`, `opentofu`), `name` = provider/module identifier (e.g. `aws`, `example`).
-   - No file nodes appear in the tree.
-   - Behaves like a typical file system tree:
-     - Expand/collapse folders.
-     - Click selects a folder.
-
-2. **Right Column – File List (FileListTable component)**  
-   - Displays files within the **currently selected `name` folder**.
-   - The file list is a **dedicated panel area** separate from the folder tree; folders never intermingle with file rows.
-   - Tabular layout with sortable headers:
-     - File name.
-     - Last modified date.
-     - Size.
+1. **Item List**
+   - Rendered as a vertically stacked list (not tiles) so users can scan long names quickly.
+   - Each row highlights the item label (typically `<group>/<name>`) with optional subtext for the upstream host/path.
+   - Selecting an item focuses the list and loads the matching Version List while keeping the Item List visible on desktop.
+2. **Version List**
+   - Populated after an item is chosen.
+   - Shows available versions/tags/releases for the current item, including additional metadata (publish dates, status, etc.).
+   - Selecting a version pushes the File List panel onto the stack.
 
 ## Independent Scrolling
 
-- The Repository Browser panel itself is wrapped in a **Panel Container** that manages scrolling.
-- Inside the panel:
-  - Folder tree column may have its own vertical scrollbar (if long).
-  - File list column may have its own vertical scrollbar.
-- Horizontal scrolling:
-  - Primarily used in the File List if columns overflow.
-  - Folder tree horizontals should be rare but allowed if paths are long.
+- The panel lives inside a `ScrollableViewPort`, so whichever list is visible can scroll independently.
+- On desktop, the Item List and Version List appear side by side with their own scroll regions; on mobile only the active list is visible at a time.
 
 ## Interaction Details
 
-- **Selecting a Folder (Tree View)**
-  - Highlights that folder.
-  - Triggers a refresh of the File List for that folder.
-  - May cause a loading state within the File List only (tree remains visible).
-
-- **Selecting a File (File List Table)**
-  - Row click opens a **File Details** panel to the right (concertina shell action).
-  - The Repository Browser panel remains in place as the left-hand context on desktop.
-  - On mobile, Repository Browser is conceptually still on the stack but not visible.
-
-- **Sorting**
-  - Clicking a table header toggles sort order for that column (ascending/descending).
-  - Only one active sort column at a time in MVP.
+- **Selecting an Item**
+  - Marks the item as active.
+  - Refreshes the Version List with versions specific to that item.
+- **Selecting a Version**
+  - Pushes the File List panel to the right (desktop) or replaces the current view (mobile).
+  - The Item List remains in the stack for breadcrumb/back navigation.
+- **Sorting/Filtering**
+  - Minimum viable product does not require complex filtering, but the UI should support alphabetical sorting and optional search for both items and versions when long lists are expected.
 
 ## States
 
 - **Loading**
-  - Initial folder tree + file list load:
-    - Show skeleton or spinner in both columns.
-  - When changing folders:
-    - Tree stays visible.
-    - File List area may show a smaller loading indicator.
-
+  - Show skeleton placeholders for both lists while fetching items/versions.
 - **Empty**
-  - If the repository type has **no repositories or folders**:
-    - Show empty state message in the tree column (e.g. “No repositories configured for this type.”).
-  - If a folder has **no files**:
-    - File List shows a “No files in this folder” message.
-
+  - If a repository has no items, display a central empty state message.
+  - If an item has no versions, Version List shows a friendly “No versions found” message.
 - **Error**
-  - Tree and/or file list show an inline error if loading fails.
-  - Also triggers a red toast summarising the failure.
-
+  - Both lists should be able to display inline errors if data fetch fails, and also surface a toast.
 - **Populated**
-  - Normal tree + list.
+  - Normal list presentation with the selected entries highlighted.
 
 ## Live Updates
 
-- When new files are added/removed in the selected folder by any client:
-  - The File List is updated automatically.
-- When a folder is added/removed:
-  - Tree view updates accordingly.
-- If the **current folder** is deleted:
-  - The panel requests its parent folder.
-  - If none exists, the concertina shell navigates upward to the Repository Types panel.
+- When new items or versions appear due to backend updates:
+  - The Item List and Version List refresh in place.
+- If the currently selected item or version disappears:
+  - The panel automatically navigates up one level (clearing the version or item selection) per the general lifecycle rules.

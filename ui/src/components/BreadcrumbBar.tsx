@@ -17,11 +17,18 @@ export function BreadcrumbBar({ items }: BreadcrumbBarProps) {
     <Breadcrumbs
       separator={<NavigateNextIcon fontSize="small" />}
       aria-label="breadcrumb"
-      sx={{ '& .MuiBreadcrumbs-li': { fontSize: 14 } }}
+      sx={{
+        '& .MuiBreadcrumbs-li': (theme) => ({
+          fontFamily: theme.typography.body2.fontFamily,
+          fontSize: theme.typography.body2.fontSize,
+          fontWeight: theme.typography.body2.fontWeight,
+          lineHeight: theme.typography.body2.lineHeight,
+        }),
+      }}
     >
       {items.map((item) =>
         item.isCurrent ? (
-          <Typography key={item.id} color="text.primary">
+          <Typography key={item.id} color="text.primary" variant="body2">
             {item.label}
           </Typography>
         ) : (
@@ -31,6 +38,7 @@ export function BreadcrumbBar({ items }: BreadcrumbBarProps) {
             color="inherit"
             component="button"
             onClick={item.onSelect}
+            variant="body2"
           >
             {item.label}
           </Link>

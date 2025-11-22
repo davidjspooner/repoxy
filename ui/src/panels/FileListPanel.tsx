@@ -20,7 +20,7 @@ export function FileListPanel({
   filesLoading,
   filesError,
   onFileSelect,
-  emptyFilesMessage = 'No files in this folder.',
+  emptyFilesMessage = 'No matches.',
 }: FileListPanelProps) {
   return (
     <Box sx={{ display: 'inline-flex', flexDirection: 'column', minWidth: 'max-content' }}>
