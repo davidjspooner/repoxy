@@ -30,10 +30,12 @@ type UpstreamAuth struct {
 // It includes the name of the repository, its type (e.g., git, docker), upstream service details,
 // and a list of mappings that define how requests to this repository should be handled.
 type Repo struct {
-	Name     string   `yaml:"name"`
-	Type     string   `yaml:"type"`
-	Upstream Upstream `yaml:"upstream"`
-	Mappings []string `yaml:"mappings"`
+	Name        string   `yaml:"name"`
+	Type        string   `yaml:"type"`
+	Label       string   `yaml:"label,omitempty"`
+	Description string   `yaml:"description,omitempty"`
+	Upstream    Upstream `yaml:"upstream"`
+	Mappings    []string `yaml:"mappings"`
 }
 
 // Storage represents the storage configuration for the proxy.

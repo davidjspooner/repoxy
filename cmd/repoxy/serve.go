@@ -40,6 +40,7 @@ var serveCommand = cmd.NewCommand(
 		if err := repo.Initialize(ctx, fs, serveMux); err != nil {
 			return fmt.Errorf("failed to initialize repository types: %w", err)
 		}
+		repo.RegisterUIRoutes(serveMux)
 		for _, r := range repoConfig.Repositories {
 			_, err := repo.NewRepository(ctx, r)
 			if err != nil {

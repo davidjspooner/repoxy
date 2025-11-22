@@ -82,12 +82,17 @@ func (a *dockerUpstreamAuth) authorization(resp *http.Response) (string, error) 
 		return "", nil
 	}
 	challengeHeader := resp.Header.Get("WWW-Authenticate")
+	challengeHeader = strings.TrimSpace(challengeHeader)
 	if challengeHeader == "" {
 		return "", nil
 	}
 	challenges, err := client.ParseWWWAuthenticate(resp.Request.Context(), challengeHeader)
 	if err != nil {
-		return "", err
+		if challenge := parseBearerChallengeFallback(challengeHeader); challenge != nil {
+			challenges = []client.Challenge{*challenge}
+		} else {
+			return "", err
+		}
 	}
 	for _, challenge := range challenges {
 		switch strings.ToLower(challenge.Scheme) {
@@ -116,6 +121,31 @@ func (a *dockerUpstreamAuth) authorization(resp *http.Response) (string, error) 
 		}
 	}
 	return "", nil
+}
+
+func parseBearerChallengeFallback(header string) *client.Challenge {
+	header = strings.TrimSpace(header)
+	if !strings.HasPrefix(strings.ToLower(header), "bearer ") {
+		return nil
+	}
+	paramStr := strings.TrimSpace(header[len("bearer"):])
+	paramStr = strings.TrimSpace(paramStr)
+	if paramStr == "" {
+		return &client.Challenge{Scheme: "Bearer", Params: map[string]string{}}
+	}
+	params := map[string]string{}
+	for _, part := range strings.Split(paramStr, ",") {
+		kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(kv[0])
+		val := strings.Trim(strings.TrimSpace(kv[1]), `"`)
+		if key != "" {
+			params[strings.ToLower(key)] = val
+		}
+	}
+	return &client.Challenge{Scheme: "Bearer", Params: params}
 }
 
 type bearerTokenSource struct {

@@ -11,31 +11,28 @@ repository instances.
 
 - `Instance` – implemented by any concrete repository implementation.
 - `Type` – exposes:
-  - `Initialize(ctx, typeName, fs, mux)` – register HTTP handlers and prepare any type-level storage subtrees.
-  - `NewRepository(ctx, config)` – construct an `Instance` for a specific repo configuration.
+  - `Initialize(ctx, typeName, mux)` – register HTTP handlers and prepare any type-level storage subtrees.
+  - `NewRepository(ctx, common, config)` – construct an `Instance` for a specific repo configuration.
 
 ## Usage
 
 ```go
-type dockerType struct{
-    fs storage.WritableFS
-}
+type dockerType struct{}
 
 func init() {
     repo.MustRegisterType("docker", &dockerType{})
 }
 
-func (d *dockerType) Initialize(ctx context.Context, typeName string, fs storage.WritableFS, mux *mux.ServeMux) error {
-    d.fs = fs
+func (d *dockerType) Initialize(ctx context.Context, typeName string, mux *mux.ServeMux) error {
     mux.HandleFunc("GET /v2/", d.handlePing)
     return nil
 }
 
-func (d *dockerType) NewRepository(ctx context.Context, cfg *repo.Repo) (repo.Instance, error) {
-    if d.fs == nil {
+func (d *dockerType) NewRepository(ctx context.Context, common repo.CommonStorage, cfg *repo.Repo) (repo.Instance, error) {
+    if common == nil {
         return nil, fmt.Errorf("docker type not initialized")
     }
-    return NewDockerInstance(cfg, d.fs), nil
+    return NewDockerInstance(cfg, common), nil
 }
 ```
 

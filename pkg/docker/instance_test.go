@@ -51,10 +51,14 @@ func newDockerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *dockerInstance {
 		t.Fatalf("ensure type fs: %v", err)
 	}
 	f := &factory{}
-	if err := f.Initialize(ctx, "docker", typeFS, mux.NewServeMux()); err != nil {
+	common, err := repo.NewCommonStorageWithLabels(typeFS, "docker", "docker")
+	if err != nil {
+		t.Fatalf("common storage: %v", err)
+	}
+	if err := f.Initialize(ctx, "docker", mux.NewServeMux()); err != nil {
 		t.Fatalf("factory init: %v", err)
 	}
-	inst, err := f.NewRepository(ctx, cfg)
+	inst, err := f.NewRepository(ctx, common, cfg)
 	if err != nil {
 		t.Fatalf("new repo: %v", err)
 	}

@@ -28,6 +28,11 @@
 2. **Writable local repositories (no upstream):** design and implement mode (b) from the requirements (local-only origin) including storage layout, locking, and auth rules.
 3. **Cache governance:** add TTL/eviction policies aligned with `requirements/framework/storage-heirachy.md` plus CLI commands to refresh or purge specific refs/blobs.
 4. **Signing of files:** consider if signing live inside or before repoxy for local terraform artifacts
+5. **Multi-instance + race handling:** design distributed coordination (e.g., locks, CAS metadata) so multiple Repoxy instances can share CommonStorage without clobbering labels or version writes.
+6. **UI REST hardening:** add pagination for item/version listings, extend `CommonStorage` with count helpers for UI summaries, and persist richer file metadata (`last_accessed`, `download_count`, content types) to back the UI API.
+7. **UI search/filter backend:** Implement server-side search/suggestions for items/versions/files; current plan assumes client-side filtering only.
+8. **UI API auth/visibility:** define authn/z for UI routes and how to filter repos/items per user/tenant to avoid leaking private names.
+9. **UI ID escaping:** Define and implement escaping rules for UI IDs that contain delimiters once we move beyond MVP (current IDs forbid `:` for simplicity).
 
 ## Version 1.2 – More Post-MVP Extensions
 1. **Debian repo:** add a Debian repository type (Packages/Sources indices, .deb caching) leveraging the shared storage layout.  

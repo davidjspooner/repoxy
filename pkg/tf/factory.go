@@ -10,7 +10,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
@@ -19,7 +18,6 @@ import (
 type tfType struct {
 	muxOnetimeDone bool          // Used to ensure the mux is only set up once
 	instances      []*tfInstance // List of registered Terraform/Tofu instances
-	fs             storage.WritableFS
 }
 
 // init registers the Terraform and Tofu factories.
@@ -30,32 +28,44 @@ func init() {
 // Ensure factory implements repo.Type.
 var _ repo.Type = (*tfType)(nil)
 
+func (f *tfType) Meta() repo.TypeMeta {
+	return repo.TypeMeta{
+		ID:          "terraform",
+		Label:       "Terraform",
+		Description: "Providers delivered from pull-through caches of registry.terraform.io or private catalogs",
+	}
+}
+
 // NewRepository creates a new Terraform or Tofu repository instance.
-func (f *tfType) NewRepository(ctx context.Context, config *repo.Repo) (repo.Instance, error) {
-	if f.fs == nil {
+func (f *tfType) NewRepository(ctx context.Context, common repo.CommonStorage, config *repo.Repo) (repo.Instance, error) {
+	if common == nil {
 		return nil, errors.New("tf type not initialized")
 	}
-	proxyFS, err := f.fs.EnsureSub(ctx, path.Join("proxies", config.Name))
+	proxyFS, err := common.EnsureSub(ctx, path.Join("proxies", config.Name))
 	if err != nil {
 		return nil, err
 	}
-	refsFS, err := proxyFS.EnsureSub(ctx, "refs")
+	proxyStore, err := repo.NewCommonStorageWithLabels(proxyFS, config.Type, config.Name)
 	if err != nil {
 		return nil, err
 	}
-	refsHelper, err := repo.NewStorageHelper(refsFS, config.Type, config.Name)
+	refsFS, err := proxyStore.EnsureSub(ctx, "refs")
 	if err != nil {
 		return nil, err
 	}
-	packagesFS, err := proxyFS.EnsureSub(ctx, "packages")
+	refsStore, err := repo.NewCommonStorageWithLabels(refsFS, config.Type, config.Name)
 	if err != nil {
 		return nil, err
 	}
-	packagesHelper, err := repo.NewStorageHelper(packagesFS, config.Type, fmt.Sprintf("%s-packages", config.Name))
+	packagesFS, err := proxyStore.EnsureSub(ctx, "packages")
 	if err != nil {
 		return nil, err
 	}
-	instance, err := NewInstance(config, proxyFS, refsHelper, packagesHelper)
+	packagesStore, err := repo.NewCommonStorageWithLabels(packagesFS, config.Type, fmt.Sprintf("%s-packages", config.Name))
+	if err != nil {
+		return nil, err
+	}
+	instance, err := NewInstance(config, proxyStore, refsStore, packagesStore)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +79,7 @@ func (f *tfType) NewRepository(ctx context.Context, config *repo.Repo) (repo.Ins
 }
 
 // Initialize registers HTTP handlers for the Terraform/Tofu endpoints on the mux.
-func (f *tfType) Initialize(ctx context.Context, typeName string, fs storage.WritableFS, mux *mux.ServeMux) error {
-	f.fs = fs
+func (f *tfType) Initialize(ctx context.Context, typeName string, mux *mux.ServeMux) error {
 	if f.muxOnetimeDone {
 		return nil
 	}

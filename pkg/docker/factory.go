@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
@@ -15,8 +14,6 @@ import (
 // factory implements the repo.Type interface for Docker repositories.
 type factory struct {
 	instances []*dockerInstance
-	fs        storage.WritableFS
-	blobs     *repo.BlobHelper
 }
 
 // init registers the Docker factory.
@@ -27,15 +24,20 @@ func init() {
 // Ensure factory implements repo.Type.
 var _ repo.Type = (*factory)(nil)
 
+func (f *factory) Meta() repo.TypeMeta {
+	return repo.TypeMeta{
+		ID:          "docker",
+		Label:       "Containers",
+		Description: "Container images served via pull-through caches of upstream or private registries",
+	}
+}
+
 // NewRepository creates a new Docker repository instance.
-func (f *factory) NewRepository(ctx context.Context, config *repo.Repo) (repo.Instance, error) {
-	if f.fs == nil {
+func (f *factory) NewRepository(ctx context.Context, common repo.CommonStorage, config *repo.Repo) (repo.Instance, error) {
+	if common == nil {
 		return nil, errors.New("docker type not initialized")
 	}
-	if f.blobs == nil {
-		return nil, errors.New("docker blob helper not initialized")
-	}
-	instance, err := NewDockerInstance(f, f.fs, f.blobs, config)
+	instance, err := NewDockerInstance(f, common, config)
 	if err != nil {
 		return nil, err
 	}
@@ -44,13 +46,7 @@ func (f *factory) NewRepository(ctx context.Context, config *repo.Repo) (repo.In
 }
 
 // Initialize registers HTTP handlers for Docker endpoints on the mux and prepares type-level resources.
-func (f *factory) Initialize(ctx context.Context, typeName string, fs storage.WritableFS, mux *mux.ServeMux) error {
-	f.fs = fs
-	helper, err := repo.NewBlobHelper(ctx, typeName, fs)
-	if err != nil {
-		return err
-	}
-	f.blobs = helper
+func (f *factory) Initialize(ctx context.Context, typeName string, mux *mux.ServeMux) error {
 	// API Root
 	mux.HandleFunc("GET /v2/", f.HandleV2)
 
@@ -94,9 +90,7 @@ func (f *factory) lookupParam(r *http.Request) (*dockerInstance, *param) {
 
 // HandleV2Catalog handles requests to the Docker v2 catalog endpoint.
 func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
-	// TODO : Implement the logic to handle the request for the Docker v2 catalog
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("V2 Catalog handler"))
+	http.Error(w, "Repository is read-only; catalog listing is not implemented", http.StatusMethodNotAllowed)
 }
 
 // HandleV2 handles requests to the Docker v2 API root endpoint.

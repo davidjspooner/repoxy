@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/davidjspooner/go-fs/pkg/storage"
 	"github.com/davidjspooner/go-http-client/pkg/client"
 	"github.com/davidjspooner/repoxy/pkg/observability"
 	"github.com/davidjspooner/repoxy/pkg/repo"
@@ -18,8 +18,7 @@ import (
 // dockerInstance implements the repo.Instance interface for Docker repositories.
 type dockerInstance struct {
 	factory           *factory
-	fs                storage.WritableFS
-	blobs             *repo.BlobHelper
+	storage           repo.CommonStorage
 	config            repo.Repo
 	pipeline          client.MiddlewarePipeline
 	nameMatchers      repo.NameMatchers // Matchers for repository names
@@ -30,11 +29,13 @@ type dockerInstance struct {
 
 // NewDockerInstance creates a new Docker repository instance.
 // It initializes the instance with the factory and configuration, and sets up the authentication middleware.
-func NewDockerInstance(factory *factory, fs storage.WritableFS, blobs *repo.BlobHelper, config *repo.Repo) (*dockerInstance, error) {
+func NewDockerInstance(factory *factory, storage repo.CommonStorage, config *repo.Repo) (*dockerInstance, error) {
+	if storage == nil {
+		return nil, fmt.Errorf("docker instance missing storage")
+	}
 	instance := &dockerInstance{
 		factory: factory,
-		fs:      fs,
-		blobs:   blobs,
+		storage: storage,
 		config:  *config,
 	}
 	instance.nameMatchers.Set(config.Mappings)
@@ -57,6 +58,19 @@ var _ client.Authenticator = (*dockerInstance)(nil)
 
 func (d *dockerInstance) GetMatchWeight(name []string) int {
 	return d.nameMatchers.GetMatchWeight(name)
+}
+
+func (d *dockerInstance) Describe() repo.InstanceMeta {
+	label := d.config.Name
+	if label == "" {
+		label = "docker"
+	}
+	return repo.InstanceMeta{
+		ID:          d.config.Name,
+		Label:       label,
+		Description: d.config.Description,
+		TypeID:      d.config.Type,
+	}
 }
 
 // HandledWriteMethodForReadOnlyRepo checks if the request is a write operation and returns a 405 if so.
@@ -101,9 +115,7 @@ func (d *dockerInstance) HandleV2BlobUpload(param *param, w http.ResponseWriter,
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	// TODO : Implement the logic to handle blob upload requests
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle blob upload requests")
-	w.WriteHeader(http.StatusNotImplemented)
+	http.Error(w, "Repository is read-only; uploads are not supported", http.StatusMethodNotAllowed)
 }
 
 // HandleV2BlobUID handles Docker V2 blob UID requests. Returns a 405 for write operations.
@@ -111,9 +123,7 @@ func (d *dockerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r 
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	// TODO : Implement the logic to handle blob UID requests
-	slog.DebugContext(r.Context(), "TODO: Implement the logic to handle blob UID requests")
-	w.WriteHeader(http.StatusNotImplemented)
+	http.Error(w, "Repository is read-only; uploads are not supported", http.StatusMethodNotAllowed)
 }
 
 // HandleV2BlobByDigest handles Docker V2 blob digest requests. Returns a 405 for write operations.
@@ -121,7 +131,7 @@ func (d *dockerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWrite
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	if param == nil || param.digest == "" || d.blobs == nil {
+	if param == nil || param.digest == "" || d.storage == nil {
 		_ = d.proxyToUpstream(r.Context(), w, r)
 		return
 	}
@@ -207,14 +217,14 @@ func (d *dockerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *h
 }
 
 func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
-	reader, err := d.blobs.Open(r.Context(), param.digest)
+	reader, err := d.storage.OpenBlob(r.Context(), param.digest)
 	if err != nil {
 		d.recordCacheMiss(observability.CacheBlobs)
 		return false
 	}
 	d.recordCacheHit(observability.CacheBlobs)
 	defer reader.Close()
-	if info, err := d.blobs.Stat(r.Context(), param.digest); err == nil {
+	if info, err := d.storage.StatBlob(r.Context(), param.digest); err == nil {
 		w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
 		d.recordCacheBytes(observability.CacheBlobs, "serve", info.Size())
 	}
@@ -251,11 +261,15 @@ func (d *dockerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, 
 		return err
 	}
 
-	tee := io.TeeReader(resp.Body, w)
-	n, err := d.blobs.Store(ctx, param.digest, tee)
+	counter := &writeCounter{w: w}
+	tee := io.TeeReader(resp.Body, counter)
+	n, err := d.storage.PutBlob(ctx, param.digest, tee)
 	if err != nil {
 		d.recordCacheError(observability.CacheBlobs)
 		return err
+	}
+	if n == 0 {
+		n = counter.n
 	}
 	d.recordCacheBytes(observability.CacheBlobs, "store", n)
 	return nil
@@ -294,4 +308,15 @@ func (d *dockerInstance) recordCacheBytes(cache, action string, n int64) {
 	}
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheBytes(repoType, repoName, cache, action, n)
+}
+
+type writeCounter struct {
+	w io.Writer
+	n int64
+}
+
+func (c *writeCounter) Write(p []byte) (int, error) {
+	n, err := c.w.Write(p)
+	c.n += int64(n)
+	return n, err
 }
