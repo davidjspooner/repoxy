@@ -8,6 +8,10 @@ export function SettingsDialogPanel() {
   const [open, setOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('light');
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  const [dataSource, setDataSource] = useState<'simulated' | 'backend'>('simulated');
+
+  const apiBaseUrl =
+    typeof window === 'undefined' ? '/api/ui/v1/' : `${window.location.protocol}//${window.location.host}/api/ui/v1/`;
 
   return (
     <Stack spacing={2} alignItems="flex-start">
@@ -22,8 +26,11 @@ export function SettingsDialogPanel() {
         onClose={() => setOpen(false)}
         themeMode={themeMode}
         density={density}
+        dataSource={dataSource}
+        apiBaseUrl={apiBaseUrl}
         onThemeChange={setThemeMode}
         onDensityChange={setDensity}
+        onDataSourceChange={setDataSource}
       />
     </Stack>
   );

@@ -51,6 +51,7 @@ const systemPrefersDark =
 export default function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('light');
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
+  const [dataSource, setDataSource] = useState<'simulated' | 'backend'>('simulated');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
@@ -58,6 +59,14 @@ export default function App() {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>(sampleData.toasts);
+
+  const apiBaseUrl = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '/api/ui/v1/';
+    }
+    const { protocol, host } = window.location;
+    return `${protocol}//${host}/api/ui/v1/`;
+  }, []);
 
   const repoTypeMap = useMemo(() => new Map(sampleData.repository_types.map((type) => [type.type, type])), []);
   const selectedType = selectedTypeId ? repoTypeMap.get(selectedTypeId) ?? null : null;
@@ -316,8 +325,11 @@ export default function App() {
           open={settingsOpen}
           density={density}
           themeMode={themeMode}
+          dataSource={dataSource}
+          apiBaseUrl={apiBaseUrl}
           onDensityChange={setDensity}
           onThemeChange={setThemeMode}
+          onDataSourceChange={setDataSource}
           onClose={() => setSettingsOpen(false)}
         />
         <ToastQueue toasts={toasts} onDismiss={(id) => setToasts((current) => current.filter((toast) => toast.id !== id))} />

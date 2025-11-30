@@ -5,7 +5,7 @@ This directory contains a placeholder React application created with Vite, React
 ## Getting Started
 
 ```bash
-cd ui
+cd reactui
 npm install    # requires Node 18+ / npm 9+
 npm run dev
 ```
