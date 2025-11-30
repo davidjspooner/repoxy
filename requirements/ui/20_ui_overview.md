@@ -3,7 +3,7 @@
 
 This document describes the **MVP user interface** for the Repoxy application, based entirely on the interview so far.
 
-Repoxy is a web UI for **browsing repository data cached by the backend** (e.g. Docker registries, Terraform/OpenTofu providers and modules, PyPI indexes, Debian APT repositories).  
+Repoxy is a web UI for **browsing repository data cached by the backend** (e.g. Container registries, Terraform/OpenTofu providers and modules, PyPI indexes, Debian APT repositories).  
 
 The webapp used react / nod and matrial UI
 
@@ -77,7 +77,7 @@ From top to bottom, the screen is structured as:
 At a conceptual level, the navigation stack is:
 
 1. **Repository Types Panel**  
-   - Tiles representing repository categories that have configured repositories (derived entirely from the backend’s repo catalogue such as `repoxy/conf/repoxy.yaml`, e.g. Docker, Terraform, OpenTofu).  
+   - Tiles representing repository categories that have configured repositories (derived entirely from the backend’s repo catalogue such as `repoxy/conf/repoxy.yaml`, e.g. Container, Terraform, OpenTofu).  
    - Repo types that have **no configured instances** are hidden; the UI is a direct reflection of configuration.
 
 2. **Folder Browser Panel** (per repository type)  

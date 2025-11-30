@@ -8,7 +8,7 @@ export function SettingsDialogPanel() {
   const [open, setOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('light');
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
-  const [dataSource, setDataSource] = useState<'simulated' | 'backend'>('simulated');
+  const [dataSource, setDataSource] = useState<'simulated' | 'backend'>('backend');
 
   const apiBaseUrl =
     typeof window === 'undefined' ? '/api/ui/v1/' : `${window.location.protocol}//${window.location.host}/api/ui/v1/`;

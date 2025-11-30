@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import type { RepoType, ListPanelItem } from '../components';
-import { ListPanel } from '../components';
+import { ListPanel, TileGrid } from '../components';
 
 export interface RepositoryTypesPanelProps {
   repoTypes: RepoType[];

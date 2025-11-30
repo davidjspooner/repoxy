@@ -1,6 +1,6 @@
 # pkg/repo
 
-This package defines the interfaces and registration helpers for repository types (Docker, Terraform, etc.) used by Repoxy.
+This package defines the interfaces and registration helpers for repository types (Container, Terraform, etc.) used by Repoxy.
 
 ## Purpose
 
@@ -17,22 +17,22 @@ repository instances.
 ## Usage
 
 ```go
-type dockerType struct{}
+type containerType struct{}
 
 func init() {
-    repo.MustRegisterType("docker", &dockerType{})
+    repo.MustRegisterType("container", &containerType{})
 }
 
-func (d *dockerType) Initialize(ctx context.Context, typeName string, mux *mux.ServeMux) error {
+func (d *containerType) Initialize(ctx context.Context, typeName string, mux *mux.ServeMux) error {
     mux.HandleFunc("GET /v2/", d.handlePing)
     return nil
 }
 
-func (d *dockerType) NewRepository(ctx context.Context, common repo.CommonStorage, cfg *repo.Repo) (repo.Instance, error) {
+func (d *containerType) NewRepository(ctx context.Context, common repo.CommonStorage, cfg *repo.Repo) (repo.Instance, error) {
     if common == nil {
-        return nil, fmt.Errorf("docker type not initialized")
+        return nil, fmt.Errorf("container type not initialized")
     }
-    return NewDockerInstance(cfg, common), nil
+    return NewContainerInstance(cfg, common), nil
 }
 ```
 

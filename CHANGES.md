@@ -16,7 +16,7 @@
   - Cache provider manifests, version listings, and download metadata inside the shared `refs/` store.
   - Cache provider archives in `packages/` and rewrite download metadata so clients always fetch from Repoxy’s archive endpoints.
 
-- **Docker read-only mirror completion**
+- **Container read-only mirror completion**
   - Proxy Docker Hub and GHCR repositories in strict read-only mode, only caching immutable blobs/layers in the shared blob store.
   - Stream manifests, tags, and catalog data directly from the upstream registries to avoid persisting mutable metadata locally.
 

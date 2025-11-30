@@ -1,6 +1,6 @@
 # Registry Abstraction Design
 
-This document describes the proposed **registry abstraction** that sits on top of a `go-fs` filesystem and provides a uniform model for naming, metadata, and blob storage across multiple artifact types (Docker, Terraform/OpenTofu, Debian, PyPI, etc.).
+This document describes the proposed **registry abstraction** that sits on top of a `go-fs` filesystem and provides a uniform model for naming, metadata, and blob storage across multiple artifact types (Container, Terraform/OpenTofu, Debian, PyPI, etc.).
 
 The goal is to:
 - Centralise how hosts, names, versions, labels, and files are represented.
@@ -308,7 +308,7 @@ Implementation details:
 
 This abstraction is intentionally generic enough to support multiple backends:
 
-- **Docker / OCI images**  
+- **Docker / OCI images Container registry**  
   - Host: `registry-1.docker.io`  
   - Name: `library/nginx`  
   - Files per version: one manifest JSON, N layer blobs, optional config JSON.
@@ -325,7 +325,7 @@ This abstraction is intentionally generic enough to support multiple backends:
   - Name: `simplejson`  
   - Files per version: sdist `.tar.gz`, wheel `.whl`, metadata JSON.
 
-Each adapter (Docker, Terraform, Debian, PyPI, etc.):
+Each adapter (Container, Terraform, Debian, PyPI, etc.):
 
 1. Parses incoming HTTP requests into a `(Host, Name, Label/VersionID, FileName)` triple.
 2. Uses `CommonStorage` helpers to resolve labels, fetch `VersionMeta`, and open blobs.

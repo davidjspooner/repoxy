@@ -12,13 +12,13 @@ storage:
 
 repos:
     - name: dockerhub
-      type: docker
+      type: container
       upstream: 
         url: https://registry-1.docker.io
       mappings:
         - "*/*"
     - name: github
-      type: docker
+      type: container
       upstream:
         url: https://ghcr.io
         auth:

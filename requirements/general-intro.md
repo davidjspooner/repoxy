@@ -7,7 +7,7 @@ project’s purpose, key architecture, and the rules that must not be broken.
 
 ## 1. Purpose & Vision
 
-Repoxy is a Go service that fronts multiple artifact repositories (Docker, Terraform, future formats) and proxies their upstream sources.
+Repoxy is a Go service that fronts multiple artifact repositories (Container, Terraform, future formats) and proxies their upstream sources.
 It strives to:
 
 1. **Provide one proxy endpoint** for many registries with unified auth, logging, and metrics.
@@ -22,7 +22,7 @@ Success means smooth onboarding of additional repository types while maintaining
 
 | Term              | Meaning                                                                                  |
 |-------------------|------------------------------------------------------------------------------------------|
-| Repository Type   | A plug-in (e.g., `docker`) registered via `pkg/repo.Type`.                                |
+| Repository Type   | A plug-in (e.g., `container`) registered via `pkg/repo.Type`.                                |
 | Storage Root      | The shared writable `go-fs` filesystem handed to every repository.                       |
 | Upstream          | The remote artifact service being proxied (Docker Hub, GHCR, registry.terraform.io).     |
 | Mapping           | A glob-style rule that determines which requests a repository instance handles.          |
@@ -44,7 +44,7 @@ When extending repo types, ensure the docs and configuration make the mode expli
    and builds each repository via the factory registry.
 2. **Repository Core (`pkg/repo`):** Handles config loading/validation, factory registration, and the storage root helper
    (`NewStorageRoot`).
-3. **Backends (`pkg/docker`, future packages):** Implement repo-specific logic but must only rely on interfaces provided by `pkg/repo`
+3. **Backends (`pkg/container`, future packages):** Implement repo-specific logic but must only rely on interfaces provided by `pkg/repo`
    and `go-fs`.
 4. **Caching Layer (`pkg/cache`):** Implements `middleware.CacheImpl` to store HTTP responses inside the shared storage root.
 5. **Storage (go-fs):** Provides `ReadOnlyFS`/`WritableFS` implementations for file/S3/GitHub/memory backends with consistent error

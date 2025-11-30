@@ -1,4 +1,4 @@
-package docker
+package container
 
 import (
 	"context"
@@ -11,14 +11,14 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-// factory implements the repo.Type interface for Docker repositories.
+// factory implements the repo.Type interface for container registries.
 type factory struct {
-	instances []*dockerInstance
+	instances []*containerInstance
 }
 
-// init registers the Docker factory.
+// init registers the Containers factory (with a legacy alias "container").
 func init() {
-	repo.MustRegisterType("docker", &factory{})
+	repo.MustRegisterType("container", &factory{})
 }
 
 // Ensure factory implements repo.Type.
@@ -26,18 +26,18 @@ var _ repo.Type = (*factory)(nil)
 
 func (f *factory) Meta() repo.TypeMeta {
 	return repo.TypeMeta{
-		ID:          "docker",
+		ID:          "containers",
 		Label:       "Containers",
 		Description: "Container images served via pull-through caches of upstream or private registries",
 	}
 }
 
-// NewRepository creates a new Docker repository instance.
+// NewRepository creates a new Container repository instance.
 func (f *factory) NewRepository(ctx context.Context, common repo.CommonStorage, config *repo.Repo) (repo.Instance, error) {
 	if common == nil {
-		return nil, errors.New("docker type not initialized")
+		return nil, errors.New("container type not initialized")
 	}
-	instance, err := NewDockerInstance(f, common, config)
+	instance, err := NewContainerInstance(f, common, config)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (f *factory) NewRepository(ctx context.Context, common repo.CommonStorage, 
 	return instance, nil
 }
 
-// Initialize registers HTTP handlers for Docker endpoints on the mux and prepares type-level resources.
+// Initialize registers HTTP handlers for Container endpoints on the mux and prepares type-level resources.
 func (f *factory) Initialize(ctx context.Context, typeName string, mux *mux.ServeMux) error {
 	// API Root
 	mux.HandleFunc("GET /v2/", f.HandleV2)
@@ -66,16 +66,16 @@ func (f *factory) Initialize(ctx context.Context, typeName string, mux *mux.Serv
 	return nil
 }
 
-// lookupParam extracts the Docker repository instance from the request path.
+// lookupParam extracts the Container repository instance from the request path.
 // This is a placeholder implementation.
-func (f *factory) lookupParam(r *http.Request) (*dockerInstance, *param) {
+func (f *factory) lookupParam(r *http.Request) (*containerInstance, *param) {
 	param := &param{
 		name:   r.PathValue("name"),
 		tag:    r.PathValue("tag"),
 		uuid:   r.PathValue("uuid"),
 		digest: r.PathValue("digest"),
 	}
-	var bestInstance *dockerInstance
+	var bestInstance *containerInstance
 	var bestScore int
 	nameParts := strings.Split(param.name, "/")
 	for _, instance := range f.instances {
@@ -88,12 +88,12 @@ func (f *factory) lookupParam(r *http.Request) (*dockerInstance, *param) {
 	return bestInstance, param
 }
 
-// HandleV2Catalog handles requests to the Docker v2 catalog endpoint.
+// HandleV2Catalog handles requests to the Container v2 catalog endpoint.
 func (f *factory) HandleV2Catalog(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Repository is read-only; catalog listing is not implemented", http.StatusMethodNotAllowed)
 }
 
-// HandleV2 handles requests to the Docker v2 API root endpoint.
+// HandleV2 handles requests to the Container v2 API root endpoint.
 func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Docker-Distribution-API-Version", "registry/2.0")
 	w.Header().Set("Content-Length", "2")
@@ -106,7 +106,7 @@ func (f *factory) HandleV2(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// HandleV2Tags handles requests to the Docker v2 tags endpoint.
+// HandleV2Tags handles requests to the Container v2 tags endpoint.
 func (f *factory) HandleV2Tags(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
@@ -116,7 +116,7 @@ func (f *factory) HandleV2Tags(w http.ResponseWriter, r *http.Request) {
 	instance.HandleV2Tags(param, w, r)
 }
 
-// HandleV2Manifest handles requests to the Docker v2 manifest endpoint.
+// HandleV2Manifest handles requests to the Container v2 manifest endpoint.
 func (f *factory) HandleV2Manifest(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
@@ -126,7 +126,7 @@ func (f *factory) HandleV2Manifest(w http.ResponseWriter, r *http.Request) {
 	instance.HandleV2Manifest(param, w, r)
 }
 
-// HandleV2BlobUpload handles requests to the Docker v2 blob upload endpoint.
+// HandleV2BlobUpload handles requests to the Container v2 blob upload endpoint.
 func (f *factory) HandleV2BlobUpload(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
@@ -136,7 +136,7 @@ func (f *factory) HandleV2BlobUpload(w http.ResponseWriter, r *http.Request) {
 	instance.HandleV2BlobUpload(param, w, r)
 }
 
-// HandleV2BlobUID handles requests to the Docker v2 blob UID endpoint.
+// HandleV2BlobUID handles requests to the Container v2 blob UID endpoint.
 func (f *factory) HandleV2BlobUID(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {
@@ -146,7 +146,7 @@ func (f *factory) HandleV2BlobUID(w http.ResponseWriter, r *http.Request) {
 	instance.HandleV2BlobUID(param, w, r)
 }
 
-// HandleV2BlobByDigest handles requests to the Docker v2 blob digest endpoint.
+// HandleV2BlobByDigest handles requests to the Container v2 blob digest endpoint.
 func (f *factory) HandleV2BlobByDigest(w http.ResponseWriter, r *http.Request) {
 	instance, param := f.lookupParam(r)
 	if instance == nil {

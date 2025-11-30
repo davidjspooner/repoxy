@@ -1,4 +1,4 @@
-package docker
+package container
 
 import (
 	"bytes"
@@ -23,19 +23,19 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-func newDockerInstanceForTest(t *testing.T, upstream string) *dockerInstance {
+func newContainerInstanceForTest(t *testing.T, upstream string) *containerInstance {
 	cfg := &repo.Repo{
 		Name: "mirror",
-		Type: "docker",
+		Type: "container",
 		Upstream: repo.Upstream{
 			URL: upstream,
 		},
 		Mappings: []string{"library/*"},
 	}
-	return newDockerInstanceFromConfig(t, cfg)
+	return newContainerInstanceFromConfig(t, cfg)
 }
 
-func newDockerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *dockerInstance {
+func newContainerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *containerInstance {
 	t.Helper()
 	ctx := context.Background()
 	fsRO, err := storage.OpenFileSystemFromString(ctx, "mem://", storage.Config{})
@@ -46,30 +46,30 @@ func newDockerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *dockerInstance {
 	if !ok {
 		t.Fatalf("fs not writable")
 	}
-	typeFS, err := root.EnsureSub(ctx, "type/docker")
+	typeFS, err := root.EnsureSub(ctx, "type/container")
 	if err != nil {
 		t.Fatalf("ensure type fs: %v", err)
 	}
 	f := &factory{}
-	common, err := repo.NewCommonStorageWithLabels(typeFS, "docker", "docker")
+	common, err := repo.NewCommonStorageWithLabels(typeFS, "container", "container")
 	if err != nil {
 		t.Fatalf("common storage: %v", err)
 	}
-	if err := f.Initialize(ctx, "docker", mux.NewServeMux()); err != nil {
+	if err := f.Initialize(ctx, "container", mux.NewServeMux()); err != nil {
 		t.Fatalf("factory init: %v", err)
 	}
 	inst, err := f.NewRepository(ctx, common, cfg)
 	if err != nil {
 		t.Fatalf("new repo: %v", err)
 	}
-	dockerInst, ok := inst.(*dockerInstance)
+	containerInst, ok := inst.(*containerInstance)
 	if !ok {
 		t.Fatalf("instance type mismatch")
 	}
-	return dockerInst
+	return containerInst
 }
 
-func newDockerClientFactory(handler func(req *http.Request) (*http.Response, error)) func() client.Interface {
+func newContainerClientFactory(handler func(req *http.Request) (*http.Response, error)) func() client.Interface {
 	return func() client.Interface {
 		return client.Func(func(req *http.Request) (*http.Response, error) {
 			return handler(req)
@@ -91,11 +91,11 @@ func httpResponse(status int, headers map[string]string, body []byte) *http.Resp
 	return resp
 }
 
-func TestDockerManifestAlwaysProxies(t *testing.T) {
+func TestContainerManifestAlwaysProxies(t *testing.T) {
 	t.Parallel()
 	hits := 0
-	inst := newDockerInstanceForTest(t, "https://registry.test")
-	inst.httpClientFactory = newDockerClientFactory(func(req *http.Request) (*http.Response, error) {
+	inst := newContainerInstanceForTest(t, "https://registry.test")
+	inst.httpClientFactory = newContainerClientFactory(func(req *http.Request) (*http.Response, error) {
 		hits++
 		body := []byte(fmt.Sprintf(`{"call":%d}`, hits))
 		return httpResponse(http.StatusOK, map[string]string{
@@ -125,11 +125,11 @@ func TestDockerManifestAlwaysProxies(t *testing.T) {
 	}
 }
 
-func TestDockerTagsAlwaysProxy(t *testing.T) {
+func TestContainerTagsAlwaysProxy(t *testing.T) {
 	t.Parallel()
 	hits := 0
-	inst := newDockerInstanceForTest(t, "https://registry.test")
-	inst.httpClientFactory = newDockerClientFactory(func(req *http.Request) (*http.Response, error) {
+	inst := newContainerInstanceForTest(t, "https://registry.test")
+	inst.httpClientFactory = newContainerClientFactory(func(req *http.Request) (*http.Response, error) {
 		hits++
 		body := []byte(fmt.Sprintf(`{"seq":%d}`, hits))
 		return httpResponse(http.StatusOK, map[string]string{
@@ -154,11 +154,11 @@ func TestDockerTagsAlwaysProxy(t *testing.T) {
 	}
 }
 
-func TestDockerManifestAuthWithBearerCredentials(t *testing.T) {
+func TestContainerManifestAuthWithBearerCredentials(t *testing.T) {
 	t.Parallel()
 	cfg := &repo.Repo{
 		Name: "mirror",
-		Type: "docker",
+		Type: "container",
 		Upstream: repo.Upstream{
 			URL: "https://registry.test",
 			Auth: &repo.UpstreamAuth{
@@ -171,7 +171,7 @@ func TestDockerManifestAuthWithBearerCredentials(t *testing.T) {
 		},
 		Mappings: []string{"library/*"},
 	}
-	inst := newDockerInstanceFromConfig(t, cfg)
+	inst := newContainerInstanceFromConfig(t, cfg)
 	tokenRequests := 0
 	inst.tokenHTTP = httpDoFunc(func(req *http.Request) (*http.Response, error) {
 		tokenRequests++
@@ -184,13 +184,13 @@ func TestDockerManifestAuthWithBearerCredentials(t *testing.T) {
 		}, []byte(`{"token":"test-token","expires_in":120}`))
 		return resp, nil
 	})
-	auth, err := newDockerUpstreamAuth(inst.tokenHTTP, inst.config.Upstream)
+	auth, err := newContainerUpstreamAuth(inst.tokenHTTP, inst.config.Upstream)
 	if err != nil {
-		t.Fatalf("newDockerUpstreamAuth: %v", err)
+		t.Fatalf("newContainerUpstreamAuth: %v", err)
 	}
 	inst.auth = auth
 	upstreamHits := 0
-	inst.httpClientFactory = newDockerClientFactory(func(req *http.Request) (*http.Response, error) {
+	inst.httpClientFactory = newContainerClientFactory(func(req *http.Request) (*http.Response, error) {
 		upstreamHits++
 		switch upstreamHits {
 		case 1:
@@ -224,7 +224,7 @@ func TestDockerManifestAuthWithBearerCredentials(t *testing.T) {
 	}
 }
 
-func TestDockerManifestAuthWithECR(t *testing.T) {
+func TestContainerManifestAuthWithECR(t *testing.T) {
 	t.Parallel()
 	token := base64.StdEncoding.EncodeToString([]byte("AWS:password"))
 	expires := time.Now().Add(time.Hour)
@@ -241,7 +241,7 @@ func TestDockerManifestAuthWithECR(t *testing.T) {
 	}()
 	cfg := &repo.Repo{
 		Name: "mirror",
-		Type: "docker",
+		Type: "container",
 		Upstream: repo.Upstream{
 			URL: "https://123456789012.dkr.ecr.us-east-1.amazonaws.com",
 			Auth: &repo.UpstreamAuth{
@@ -256,9 +256,9 @@ func TestDockerManifestAuthWithECR(t *testing.T) {
 		},
 		Mappings: []string{"library/*"},
 	}
-	inst := newDockerInstanceFromConfig(t, cfg)
+	inst := newContainerInstanceFromConfig(t, cfg)
 	upstreamHits := 0
-	inst.httpClientFactory = newDockerClientFactory(func(req *http.Request) (*http.Response, error) {
+	inst.httpClientFactory = newContainerClientFactory(func(req *http.Request) (*http.Response, error) {
 		upstreamHits++
 		switch upstreamHits {
 		case 1:
@@ -292,14 +292,14 @@ func TestDockerManifestAuthWithECR(t *testing.T) {
 	}
 }
 
-func TestDockerBlobCaching(t *testing.T) {
+func TestContainerBlobCaching(t *testing.T) {
 	t.Parallel()
 	layer := []byte("layer-data")
 	sum := sha256.Sum256(layer)
 	digest := "sha256:" + hex.EncodeToString(sum[:])
 	hits := 0
-	inst := newDockerInstanceForTest(t, "https://registry.test")
-	inst.httpClientFactory = newDockerClientFactory(func(req *http.Request) (*http.Response, error) {
+	inst := newContainerInstanceForTest(t, "https://registry.test")
+	inst.httpClientFactory = newContainerClientFactory(func(req *http.Request) (*http.Response, error) {
 		if req.URL.Path == "/v2/library/alpine/blobs/"+digest {
 			hits++
 			return httpResponse(http.StatusOK, nil, layer), nil

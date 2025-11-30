@@ -8,6 +8,7 @@ Common response conventions:
 - All responses use `application/json`.
 - Errors follow `{ "error": { "code": "NOT_FOUND", "message": "..." } }`.
 - Timestamps are ISO-8601 UTC strings.
+- Field names are lower-case with underscores where needed (e.g., `id`, `label`, `description`, `type_id`, `count_repositories`); Go structs should carry explicit `json` tags to enforce this.
 
 ### ID Conventions (MVP)
 
@@ -177,7 +178,7 @@ Lists files/assets belonging to a specific version (e.g., manifests, metadata, a
     {
       "id": "file-1111",
       "name": "manifest.json",
-      "path": "docker/dockerhub/library/nginx/v1.27.0/manifest.json",
+      "path": "container/dockerhub/library/nginx/v1.27.0/manifest.json",
       "content_type": "application/vnd.oci.image.manifest.v1+json",
       "size_bytes": 812,
       "modified": "2025-05-18T10:10:44Z"
@@ -185,7 +186,7 @@ Lists files/assets belonging to a specific version (e.g., manifests, metadata, a
     {
       "id": "file-2222",
       "name": "config.json",
-      "path": "docker/dockerhub/library/nginx/v1.27.0/config.json",
+      "path": "container/dockerhub/library/nginx/v1.27.0/config.json",
       "content_type": "application/json",
       "size_bytes": 2048,
       "modified": "2025-05-18T10:10:40Z"
@@ -207,7 +208,7 @@ Detailed metadata for a single file reference.
   "file": {
     "id": "file-1111",
     "name": "manifest.json",
-    "path": "docker/dockerhub/library/nginx/v1.27.0/manifest.json",
+    "path": "container/dockerhub/library/nginx/v1.27.0/manifest.json",
     "repository_type": "Containers",
     "repository_name": "Docker Hub",
     "item_label": "library/nginx",

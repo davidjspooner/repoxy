@@ -50,7 +50,7 @@ export interface SampleData {
 export const sampleData: SampleData = {
   repository_types: [
     {
-      type: 'docker',
+      type: 'containers',
       label: 'Containers',
       description: 'Container images served via pull-through caches of upstream or private registries.',
       repos: [
@@ -72,7 +72,7 @@ export const sampleData: SampleData = {
                       files: [
                         {
                           file: 'manifest.json',
-                          path: 'docker/dockerhub/library/nginx/manifest.json',
+                          path: 'container/dockerhub/library/nginx/manifest.json',
                           size_bytes: 812,
                           modified: '2025-05-18T10:10:44Z',
                           content_type: 'application/vnd.oci.image.manifest.v1+json',
@@ -84,7 +84,7 @@ export const sampleData: SampleData = {
                         },
                         {
                           file: 'config.json',
-                          path: 'docker/dockerhub/library/nginx/config.json',
+                          path: 'container/dockerhub/library/nginx/config.json',
                           size_bytes: 2048,
                           modified: '2025-05-18T10:10:40Z',
                           content_type: 'application/json',
@@ -108,7 +108,7 @@ export const sampleData: SampleData = {
                       files: [
                         {
                           file: 'manifest.json',
-                          path: 'docker/dockerhub/redis/alpine/manifest.json',
+                          path: 'container/dockerhub/redis/alpine/manifest.json',
                           size_bytes: 756,
                           modified: '2025-05-17T19:29:09Z',
                           content_type: 'application/vnd.oci.image.manifest.v1+json',
@@ -144,7 +144,7 @@ export const sampleData: SampleData = {
                       files: [
                         {
                           file: 'manifest.json',
-                          path: 'docker/github/davidjspooner/repoxy/manifest.json',
+                          path: 'container/github/davidjspooner/repoxy/manifest.json',
                           size_bytes: 680,
                           modified: '2025-05-18T09:48:42Z',
                           content_type: 'application/vnd.oci.image.manifest.v1+json',

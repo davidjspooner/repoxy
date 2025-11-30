@@ -27,7 +27,7 @@ repoxy/
 ├── cmd/repoxy         # CLI entry point
 ├── pkg/
 │   ├── repo           # config loader, factory registry, storage root
-│   ├── docker         # Docker proxy implementation
+│   ├── container      # Docker proxy implementation
 │   ├── cache          # HTTP response caching helpers
 │   ├── listener       # listener configuration helpers
 │   └── tf             # placeholder for Terraform/OpenTofu logic

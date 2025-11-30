@@ -7,7 +7,7 @@ These types map directly to the `type` field in the backend configuration (`repo
 ## Purpose
 
 - Provide a **high-level entry point** into different ecosystems:
-  - Docker/OCI
+  - Docker/OCI containers
   - Terraform / OpenTofu providers
   - Terraform / OpenTofu modules
   - PyPI
@@ -27,7 +27,7 @@ See `../22_ui_panel_flow.md` for how this panel sits in the concertina stack (si
 
 - Main content is a **grid or list of tiles**, each rendered via the `RepoTypeTile` component (`../components/22_ui_component_repo_type_tile.md`).
 - Each tile contains:
-  - Repository type name (e.g. "Docker", "PyPI").
+  - Repository type name (e.g. "Container", "PyPI").
   - Optionally a short description or example (non-essential for MVP).
   - Future (post-MVP): small logo/icon for the ecosystem.
 

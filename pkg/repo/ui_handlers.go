@@ -54,6 +54,16 @@ func handleListTypes(w http.ResponseWriter, r *http.Request) {
 		if meta.ID == "" {
 			meta.ID = td.typeName
 		}
+		if td.typeName == "tofu" || strings.EqualFold(meta.ID, "tofu") {
+			if meta.Label == "" || strings.EqualFold(meta.Label, "terraform") {
+				meta.Label = "OpenTofu"
+			}
+			if meta.Description == "" {
+				meta.Description = "Providers delivered from pull-through caches of registry.opentofu.org or private catalogs"
+			}
+		} else if meta.Label == "" {
+			meta.Label = strings.Title(td.typeName)
+		}
 		typeBody.Types = append(typeBody.Types, meta)
 	}
 	sort.Slice(typeBody.Types, func(i, j int) bool { return typeBody.Types[i].ID < typeBody.Types[j].ID })
@@ -366,10 +376,11 @@ func getTypeByID(typeID string) *TypeDetails {
 	defer rTypeLock.RUnlock()
 	for _, td := range rTypeDetails {
 		meta := td.rType.Meta()
-		if meta.ID == "" {
-			meta.ID = td.typeName
+		metaID := meta.ID
+		if metaID == "" {
+			metaID = td.typeName
 		}
-		if meta.ID == typeID {
+		if metaID == typeID || td.typeName == typeID {
 			return td
 		}
 	}

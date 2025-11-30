@@ -15,8 +15,8 @@ type Instance interface {
 
 // InstanceMeta describes a repository instance for UI display.
 type InstanceMeta struct {
-	ID          string
-	Label       string
-	Description string
-	TypeID      string
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+	TypeID      string `json:"type_id"`
 }

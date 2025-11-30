@@ -70,7 +70,7 @@ If GHCR requires authentication, add credentials under `upstream.auth` so Repoxy
 ```yaml
 repos:
   - name: github
-    type: docker
+    type: container
     upstream:
       url: https://ghcr.io
       auth:
@@ -89,7 +89,7 @@ Repoxy can also front private Amazon ECR registries by supplying AWS credentials
 ```yaml
 repos:
   - name: prod-ecr
-    type: docker
+    type: container
     upstream:
       url: https://123456789012.dkr.ecr.us-east-1.amazonaws.com
       auth:

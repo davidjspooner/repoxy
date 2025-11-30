@@ -5,7 +5,7 @@ meta:
     Values are illustrative and loosely based on repoxy/conf/repoxy.yaml.
 
 repository_types:
-  - type: docker
+  - type: container
     label: Containers
     description: Container images served via pull-through caches of upstream or local/private registries.
     repos:
@@ -22,7 +22,7 @@ repository_types:
                     last_updated: 2025-05-18T10:10:45Z
                     files:
                       - file: manifest.json
-                        path: docker/dockerhub/library/nginx/manifest.json
+                        path: container/dockerhub/library/nginx/manifest.json
                         size_bytes: 812
                         modified: 2025-05-18T10:10:44Z
                         content_type: application/vnd.oci.image.manifest.v1+json
@@ -31,7 +31,7 @@ repository_types:
                         download_count: 42
                         last_accessed: 2025-05-18T10:55:00Z
                       - file: config.json
-                        path: docker/dockerhub/library/nginx/config.json
+                        path: container/dockerhub/library/nginx/config.json
                         size_bytes: 2048
                         modified: 2025-05-18T10:10:40Z
                         content_type: application/json

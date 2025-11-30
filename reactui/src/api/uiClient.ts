@@ -1,12 +1,12 @@
 export interface ApiType {
-  id: string;
-  label: string;
+  id?: string;
+  label?: string;
   description?: string;
 }
 
 export interface ApiRepo {
-  id: string;
-  label: string;
+  id?: string;
+  label?: string;
   description?: string;
   type_id?: string;
 }

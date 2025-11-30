@@ -32,7 +32,7 @@ storage:
   config: {}
 repos:
   - name: alpine
-    type: docker
+    type: container
     upstream:
       url: https://registry-1.docker.io
       config: {}

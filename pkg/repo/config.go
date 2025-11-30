@@ -12,7 +12,7 @@ import (
 
 // Upstream represents an upstream service configuration.
 // It includes the type, URL of the service and optional authentication details.
-// examples could be a Git repository URL, a Docker registry URL, etc.
+// examples could be a Git repository URL, a Container registry URL, etc.
 type Upstream struct {
 	// URL is the URL of the upstream service . eg https://index.docker.io/
 	URL    string            `yaml:"url"`

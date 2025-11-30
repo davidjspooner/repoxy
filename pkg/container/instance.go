@@ -1,4 +1,4 @@
-package docker
+package container
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-// dockerInstance implements the repo.Instance interface for Docker repositories.
-type dockerInstance struct {
+// containerInstance implements the repo.Instance interface for Container repositories.
+type containerInstance struct {
 	factory           *factory
 	storage           repo.CommonStorage
 	config            repo.Repo
@@ -24,16 +24,16 @@ type dockerInstance struct {
 	nameMatchers      repo.NameMatchers // Matchers for repository names
 	httpClientFactory func() client.Interface
 	tokenHTTP         httpDoer
-	auth              *dockerUpstreamAuth
+	auth              *containerUpstreamAuth
 }
 
-// NewDockerInstance creates a new Docker repository instance.
+// NewContainerInstance creates a new Container repository instance.
 // It initializes the instance with the factory and configuration, and sets up the authentication middleware.
-func NewDockerInstance(factory *factory, storage repo.CommonStorage, config *repo.Repo) (*dockerInstance, error) {
+func NewContainerInstance(factory *factory, storage repo.CommonStorage, config *repo.Repo) (*containerInstance, error) {
 	if storage == nil {
 		return nil, fmt.Errorf("docker instance missing storage")
 	}
-	instance := &dockerInstance{
+	instance := &containerInstance{
 		factory: factory,
 		storage: storage,
 		config:  *config,
@@ -44,7 +44,7 @@ func NewDockerInstance(factory *factory, storage repo.CommonStorage, config *rep
 		return &http.Client{}
 	}
 	instance.tokenHTTP = &http.Client{}
-	auth, err := newDockerUpstreamAuth(instance.tokenHTTP, config.Upstream)
+	auth, err := newContainerUpstreamAuth(instance.tokenHTTP, config.Upstream)
 	if err != nil {
 		return nil, err
 	}
@@ -53,29 +53,33 @@ func NewDockerInstance(factory *factory, storage repo.CommonStorage, config *rep
 }
 
 // Ensure dockerInstance implements the repo.Instance , client.Authenticator, client.Cache interfaces.
-var _ repo.Instance = (*dockerInstance)(nil)
-var _ client.Authenticator = (*dockerInstance)(nil)
+var _ repo.Instance = (*containerInstance)(nil)
+var _ client.Authenticator = (*containerInstance)(nil)
 
-func (d *dockerInstance) GetMatchWeight(name []string) int {
+func (d *containerInstance) GetMatchWeight(name []string) int {
 	return d.nameMatchers.GetMatchWeight(name)
 }
 
-func (d *dockerInstance) Describe() repo.InstanceMeta {
+func (d *containerInstance) Describe() repo.InstanceMeta {
 	label := d.config.Name
 	if label == "" {
-		label = "docker"
+		label = "containers"
+	}
+	typeID := d.config.Type
+	if typeID == "container" {
+		typeID = "containers"
 	}
 	return repo.InstanceMeta{
 		ID:          d.config.Name,
 		Label:       label,
 		Description: d.config.Description,
-		TypeID:      d.config.Type,
+		TypeID:      typeID,
 	}
 }
 
 // HandledWriteMethodForReadOnlyRepo checks if the request is a write operation and returns a 405 if so.
 // Returns true if the request was handled (i.e., is not allowed), false otherwise.
-func (d *dockerInstance) HandledWriteMethodForReadOnlyRepo(w http.ResponseWriter, r *http.Request) bool {
+func (d *containerInstance) HandledWriteMethodForReadOnlyRepo(w http.ResponseWriter, r *http.Request) bool {
 	switch r.Method {
 	case http.MethodGet, http.MethodHead:
 		return false // Read operations are allowed
@@ -86,8 +90,8 @@ func (d *dockerInstance) HandledWriteMethodForReadOnlyRepo(w http.ResponseWriter
 	}
 }
 
-// HandleV2Tags handles Docker V2 tags requests. Returns a 405 for write operations.
-func (d *dockerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *http.Request) {
+// HandleV2Tags handles container V2 tags requests. Returns a 405 for write operations.
+func (d *containerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -97,8 +101,8 @@ func (d *dockerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *ht
 	}
 }
 
-// HandleV2Manifest handles Docker V2 manifest requests. Returns a 405 for write operations.
-func (d *dockerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r *http.Request) {
+// HandleV2Manifest handles container V2 manifest requests. Returns a 405 for write operations.
+func (d *containerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -110,24 +114,24 @@ func (d *dockerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r
 	}
 }
 
-// HandleV2BlobUpload handles Docker V2 blob upload requests. Returns a 405 for write operations.
-func (d *dockerInstance) HandleV2BlobUpload(param *param, w http.ResponseWriter, r *http.Request) {
+// HandleV2BlobUpload handles container V2 blob upload requests. Returns a 405 for write operations.
+func (d *containerInstance) HandleV2BlobUpload(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
 	http.Error(w, "Repository is read-only; uploads are not supported", http.StatusMethodNotAllowed)
 }
 
-// HandleV2BlobUID handles Docker V2 blob UID requests. Returns a 405 for write operations.
-func (d *dockerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r *http.Request) {
+// HandleV2BlobUID handles container V2 blob UID requests. Returns a 405 for write operations.
+func (d *containerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
 	http.Error(w, "Repository is read-only; uploads are not supported", http.StatusMethodNotAllowed)
 }
 
-// HandleV2BlobByDigest handles Docker V2 blob digest requests. Returns a 405 for write operations.
-func (d *dockerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWriter, r *http.Request) {
+// HandleV2BlobByDigest handles container V2 blob digest requests. Returns a 405 for write operations.
+func (d *containerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -143,7 +147,7 @@ func (d *dockerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWrite
 	}
 }
 
-func (d *dockerInstance) Authenticate(response *http.Response) string {
+func (d *containerInstance) Authenticate(response *http.Response) string {
 	if response == nil || d.auth == nil {
 		return ""
 	}
@@ -155,11 +159,11 @@ func (d *dockerInstance) Authenticate(response *http.Response) string {
 	return header
 }
 
-func (d *dockerInstance) Config() repo.Repo {
+func (d *containerInstance) Config() repo.Repo {
 	return d.config
 }
 
-func (d *dockerInstance) proxyToUpstream(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (d *containerInstance) proxyToUpstream(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	resp, err := d.roundTripUpstream(ctx, r)
 	if err != nil {
 		return err
@@ -174,7 +178,7 @@ func (d *dockerInstance) proxyToUpstream(ctx context.Context, w http.ResponseWri
 	return err
 }
 
-func (d *dockerInstance) roundTripUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
+func (d *containerInstance) roundTripUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
 	u, err := url.Parse(d.config.Upstream.URL)
 	if err != nil {
 		return nil, err
@@ -208,7 +212,7 @@ func (d *dockerInstance) roundTripUpstream(ctx context.Context, r *http.Request)
 	return resp, nil
 }
 
-func (d *dockerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *http.Response) {
+func (d *containerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *http.Response) {
 	for key, values := range resp.Header {
 		for _, value := range values {
 			w.Header().Add(key, value)
@@ -216,7 +220,7 @@ func (d *dockerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *h
 	}
 }
 
-func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
+func (d *containerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
 	reader, err := d.storage.OpenBlob(r.Context(), param.digest)
 	if err != nil {
 		d.recordCacheMiss(observability.CacheBlobs)
@@ -241,7 +245,7 @@ func (d *dockerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *
 	return true
 }
 
-func (d *dockerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, r *http.Request) error {
+func (d *containerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	resp, err := d.roundTripUpstream(ctx, r)
 	if err != nil {
@@ -275,10 +279,10 @@ func (d *dockerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, 
 	return nil
 }
 
-func (d *dockerInstance) repoLabels() (string, string) {
+func (d *containerInstance) repoLabels() (string, string) {
 	repoType := d.config.Type
 	if repoType == "" {
-		repoType = "docker"
+		repoType = "container"
 	}
 	repoName := d.config.Name
 	if repoName == "" {
@@ -287,22 +291,22 @@ func (d *dockerInstance) repoLabels() (string, string) {
 	return repoType, repoName
 }
 
-func (d *dockerInstance) recordCacheHit(cache string) {
+func (d *containerInstance) recordCacheHit(cache string) {
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheHit(repoType, repoName, cache)
 }
 
-func (d *dockerInstance) recordCacheMiss(cache string) {
+func (d *containerInstance) recordCacheMiss(cache string) {
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheMiss(repoType, repoName, cache)
 }
 
-func (d *dockerInstance) recordCacheError(cache string) {
+func (d *containerInstance) recordCacheError(cache string) {
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheError(repoType, repoName, cache)
 }
 
-func (d *dockerInstance) recordCacheBytes(cache, action string, n int64) {
+func (d *containerInstance) recordCacheBytes(cache, action string, n int64) {
 	if n <= 0 {
 		return
 	}

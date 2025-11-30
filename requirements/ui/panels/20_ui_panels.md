@@ -26,7 +26,7 @@ For the authoritative description of how panels push/pop, which slot they occupy
 
 ### From Repository Types → Repository Browser
 
-- User selects a **Repository Type tile** (e.g. Docker, Terraform).
+- User selects a **Repository Type tile** (e.g. Container, Terraform).
 - Action:
   - Concertina Shell:
     - Pushes the **Repository Browser** panel onto the stack.

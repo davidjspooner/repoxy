@@ -21,7 +21,7 @@ Displays the **current navigation path** across panels.
 - Clicking a segment:
   - Requests the Concertina Shell to **PopTo** that segment’s panel.
 - Visual representation:
-  - Text label per level (e.g. `Docker / my-repo / images / v1 / manifest.json`).
+  - Text label per level (e.g. `Container / my-repo / images / v1 / manifest.json`).
   - Styling for the last segment to indicate “current location”.
 
 ## Responsiveness
@@ -29,5 +29,5 @@ Displays the **current navigation path** across panels.
 - On narrow screens:
   - Breadcrumbs may:
     - Truncate intermediate segments.
-    - Collapse into a shorter form with an overflow indicator (e.g. `Docker / … / v1 / manifest.json`).
+    - Collapse into a shorter form with an overflow indicator (e.g. `Container / … / v1 / manifest.json`).
 - Full breadcrumb state should remain available via tooltip or expansion.

@@ -1,4 +1,4 @@
-package docker
+package container
 
 // param represents the parsed pieces of a Docker registry request.
 type param struct {

@@ -38,9 +38,9 @@ type InstanceDetails struct {
 
 // TypeMeta captures human-friendly labels for UI use.
 type TypeMeta struct {
-	ID          string
-	Label       string
-	Description string
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
 }
 
 var (

@@ -11,7 +11,7 @@ Represents a single repository type as a selectable tile.
 ## Contents
 
 - Primary label:
-  - Human-readable type name, e.g. “Docker”, “PyPI”, “APT”.
+  - Human-readable type name, e.g. "Container”, “PyPI”, “APT”.
 - Optional secondary text:
   - Short description or example (optional in MVP).
 - Future (post-MVP):

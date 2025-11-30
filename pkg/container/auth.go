@@ -1,4 +1,4 @@
-package docker
+package container
 
 import (
 	"context"
@@ -30,13 +30,13 @@ func (f httpDoFunc) Do(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
-type dockerUpstreamAuth struct {
+type containerUpstreamAuth struct {
 	bearer *bearerTokenSource
 	basic  basicCredentialSource
 }
 
-func newDockerUpstreamAuth(httpClient httpDoer, upstream repo.Upstream) (*dockerUpstreamAuth, error) {
-	auth := &dockerUpstreamAuth{
+func newContainerUpstreamAuth(httpClient httpDoer, upstream repo.Upstream) (*containerUpstreamAuth, error) {
+	auth := &containerUpstreamAuth{
 		bearer: newBearerTokenSource(httpClient, "", ""),
 	}
 	if upstream.Auth == nil {
@@ -77,7 +77,7 @@ func newDockerUpstreamAuth(httpClient httpDoer, upstream repo.Upstream) (*docker
 	return auth, nil
 }
 
-func (a *dockerUpstreamAuth) authorization(resp *http.Response) (string, error) {
+func (a *containerUpstreamAuth) authorization(resp *http.Response) (string, error) {
 	if resp == nil {
 		return "", nil
 	}
