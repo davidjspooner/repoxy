@@ -47,14 +47,14 @@ type Storage struct {
 	Config storage.Config `yaml:"config"`
 }
 
-// File represents the overall configuration for repoxy
-type File struct {
+// ConfigFile represents the overall configuration for repoxy
+type ConfigFile struct {
 	Server       *listener.Group `yaml:"server"`
 	Storage      *Storage        `yaml:"storage"`
 	Repositories []*Repo         `yaml:"repos"`
 }
 
-func loadConfig(filename string) (*File, error) {
+func loadConfig(filename string) (*ConfigFile, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file %s: %w", filename, err)
@@ -62,7 +62,7 @@ func loadConfig(filename string) (*File, error) {
 	defer f.Close()
 	d := yaml.NewDecoder(f)
 	d.KnownFields(true) // Ensure unknown fields are not allowed
-	cfg := &File{}
+	cfg := &ConfigFile{}
 	if err := d.Decode(cfg); err != nil {
 		return nil, fmt.Errorf("failed to decode config file %s: %w", filename, err)
 	}
@@ -70,8 +70,8 @@ func loadConfig(filename string) (*File, error) {
 }
 
 // LoadConfigs loads the configuration from a set of YAML file.
-func LoadConfigs(fileglobs ...string) (*File, error) {
-	mergedConfig := &File{}
+func LoadConfigs(fileglobs ...string) (*ConfigFile, error) {
+	mergedConfig := &ConfigFile{}
 	for _, fileglob := range fileglobs {
 		if fileglob == "" {
 			continue
