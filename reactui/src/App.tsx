@@ -923,6 +923,14 @@ function buildRoutePath(route: RouteSelection, basePath: string): string {
   return `${base}${suffix}/`;
 }
 
+function pushRoute(route: RouteSelection, basePath: string) {
+  if (typeof window === 'undefined') return;
+  const targetPath = buildRoutePath(route, basePath);
+  if (window.location.pathname !== targetPath) {
+    window.history.pushState({}, '', targetPath + window.location.search + window.location.hash);
+  }
+}
+
 function buildSimulatedCache(): DataCache {
   const cache = emptyCache();
 
