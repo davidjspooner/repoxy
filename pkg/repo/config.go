@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/davidjspooner/go-fs/pkg/storage"
-	"github.com/davidjspooner/repoxy/pkg/listener"
+	"github.com/davidjspooner/go-http-server/pkg/listener"
 	"gopkg.in/yaml.v3"
 )
 
