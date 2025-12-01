@@ -59,6 +59,7 @@ type VersionMeta struct {
 	Name      string      `json:"name"`
 	CreatedAt time.Time   `json:"createdAt"`
 	Files     []FileEntry `json:"files"`
+	Manifest  string      `json:"manifest,omitempty"`
 }
 
 // LabelBindings mirrors labels.json on disk.

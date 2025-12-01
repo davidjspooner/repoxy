@@ -402,8 +402,11 @@ func TestContainerManifestFallsBackToCacheOnUpstreamError(t *testing.T) {
 	if len(meta.Files) == 0 {
 		t.Fatalf("manifest meta missing files")
 	}
-	if _, err := inst.storage.OpenBlob(context.Background(), meta.Files[0].BlobKey); err != nil {
-		t.Fatalf("open cached manifest blob: %v", err)
+	if len(meta.Manifest) == 0 {
+		t.Fatalf("manifest not stored in metadata (len=0)")
+	}
+	if meta.Manifest != string(manifest) {
+		t.Fatalf("manifest mismatch: %s", meta.Manifest)
 	}
 	req2 := httptest.NewRequest(http.MethodGet, "/v2/library/alpine/manifests/latest", nil)
 	rr2 := httptest.NewRecorder()

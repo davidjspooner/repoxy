@@ -372,6 +372,7 @@ func (d *containerRegistryInstance) cacheManifest(ctx context.Context, param *pa
 			Size:      int64(len(body)),
 			MediaType: mediaType,
 		}},
+		Manifest: string(body),
 	}
 	loc, err := d.storage.CreateVersion(ctx, loc, meta)
 	if err != nil && !errors.Is(err, fs.ErrExist) {
@@ -407,19 +408,22 @@ func (d *containerRegistryInstance) serveCachedManifest(param *param, w http.Res
 		return false
 	}
 	file := meta.Files[0]
-	reader, err := d.storage.OpenBlob(ctx, file.BlobKey)
-	if err != nil {
-		d.recordCacheError(observability.CacheManifests)
-		return false
-	}
-	defer reader.Close()
-
-	contentLength := file.Size
-	if contentLength <= 0 {
-		if info, statErr := d.storage.StatBlob(ctx, file.BlobKey); statErr == nil {
-			contentLength = info.Size()
+	manifest := []byte(meta.Manifest)
+	if len(manifest) == 0 {
+		reader, err := d.storage.OpenBlob(ctx, file.BlobKey)
+		if err != nil {
+			d.recordCacheError(observability.CacheManifests)
+			return false
+		}
+		defer reader.Close()
+		manifest, err = io.ReadAll(reader)
+		if err != nil {
+			d.recordCacheError(observability.CacheManifests)
+			return false
 		}
 	}
+
+	contentLength := int64(len(manifest))
 	if contentLength > 0 {
 		w.Header().Set("Content-Length", strconv.FormatInt(contentLength, 10))
 	}
@@ -436,12 +440,12 @@ func (d *containerRegistryInstance) serveCachedManifest(param *param, w http.Res
 		d.recordCacheHit(observability.CacheManifests)
 		return true
 	}
-	n, err := io.Copy(w, reader)
+	n, err := w.Write(manifest)
 	if err != nil {
 		d.recordCacheError(observability.CacheManifests)
 		return true
 	}
-	d.recordCacheBytes(observability.CacheManifests, "serve", n)
+	d.recordCacheBytes(observability.CacheManifests, "serve", int64(n))
 	d.recordCacheHit(observability.CacheManifests)
 	return true
 }

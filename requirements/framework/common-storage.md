@@ -102,7 +102,7 @@ Notes:
 
 #### 2.2.2 `versions/<uuid>.json`
 
-Each version file contains the full file list and any additional metadata for that immutable version. The `versionId` value is purely internal to Repoxy; adapters must not infer any relationship between a Repoxy version ID and upstream tags, digests, or SemVer strings.
+Each version file contains the full file list and any additional metadata for that immutable version. The `versionId` value is purely internal to Repoxy; adapters must not infer any relationship between a Repoxy version ID and upstream tags, digests, or SemVer strings. Adapters **may embed canonical descriptors** (e.g., a container manifest JSON) directly in the version metadata while also recording the blob location for the same content; this keeps the manifest available even if the blob is pruned or unavailable.
 
 ```jsonc
 {
@@ -111,6 +111,7 @@ Each version file contains the full file list and any additional metadata for th
   "host": "docker.io",
   "name": "library/nginx",
   "createdAt": "2025-11-20T12:00:00Z",
+  "manifest": "{...raw manifest JSON...}", // optional, canonical descriptor cached inline
   "files": [
     {
       "name": "manifest.json",

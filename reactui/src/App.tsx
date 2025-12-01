@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import Typography from '@mui/material/Typography';
 import './app.css';
 import type {
   PanelDescriptor,
@@ -18,13 +17,6 @@ import type {
 } from './components';
 import { HeaderBar, ConcertinaShell, ToastQueue, SettingsDialog, FloatingDebugButton } from './components';
 import { RepositoryTypesPanel, RepoInstancesPanel, ItemListPanel, VersionListPanel, FileListPanel, FileDetailsPanel } from './panels';
-import {
-  sampleData,
-  type SampleRepoType,
-  type SampleFile,
-  type SampleNameEntry,
-  type SampleRepo,
-} from './mock/sampleData';
 import {
   loadRepositoryTypes,
   loadRepositories,
@@ -92,23 +84,15 @@ export default function App() {
   const stored = loadStoredSettings();
   const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(stored.themeMode ?? 'light');
   const [density, setDensity] = useState<'comfortable' | 'compact'>(stored.density ?? 'comfortable');
-  const [dataSource, setDataSource] = useState<'simulated' | 'backend'>(stored.dataSource ?? 'backend');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
   const [selectedRepoId, setSelectedRepoId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<ToastMessage[]>(
-    (stored.dataSource ?? 'backend') === 'simulated'
-      ? sampleData.toasts
-      : [{ id: 'backend', level: 'success', message: 'Connected to backend API' }],
-  );
-  const hasAppliedDataSourceReset = useRef(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([{ id: 'backend', level: 'success', message: 'Connected to backend API' }]);
   const isHydratingFromURL = useRef(true);
-  const [dataCache, setDataCache] = useState<DataCache>(() =>
-    (stored.dataSource ?? 'backend') === 'simulated' ? buildSimulatedCache() : emptyCache(),
-  );
+  const [dataCache, setDataCache] = useState<DataCache>(emptyCache());
   const [repoTypesLoading, setRepoTypesLoading] = useState(false);
   const [repoTypesError, setRepoTypesError] = useState<string | null>(null);
   const [reposLoading, setReposLoading] = useState(false);
@@ -158,43 +142,13 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, [uiBasePath]);
 
-  // Reset data & selections when switching data source.
-  useEffect(() => {
-    if (!hasAppliedDataSourceReset.current) {
-      hasAppliedDataSourceReset.current = true;
-      return;
-    }
-    setSelectedTypeId(null);
-    setSelectedRepoId(null);
-    setSelectedItemId(null);
-    setSelectedVersionId(null);
-    setSelectedFileId(null);
-    setRepoTypesError(null);
-    setReposError(null);
-    setItemsError(null);
-    setVersionsError(null);
-    setFilesError(null);
-    setFileDetailError(null);
-    if (dataSource === 'simulated') {
-      setDataCache(buildSimulatedCache());
-      setToasts(sampleData.toasts);
-    } else {
-      setDataCache(emptyCache());
-      setToasts([{ id: 'backend', level: 'success', message: 'Connected to backend API' }]);
-    }
-  }, [dataSource]);
-
   // Persist settings to storage/cookie.
   useEffect(() => {
-    persistSettings({ themeMode, density, dataSource });
-  }, [themeMode, density, dataSource]);
+    persistSettings({ themeMode, density });
+  }, [themeMode, density]);
 
   // Backend: load repository types.
   useEffect(() => {
-    if (dataSource !== 'backend') {
-      setRepoTypesLoading(false);
-      return;
-    }
     let cancelled = false;
     setRepoTypesLoading(true);
     setRepoTypesError(null);
@@ -218,11 +172,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dataSource, apiBaseUrl]);
+  }, [apiBaseUrl]);
 
   // Backend: load repositories for selected type.
   useEffect(() => {
-    if (dataSource !== 'backend' || !selectedTypeId || dataCache.reposByType[selectedTypeId]) {
+    if (!selectedTypeId || dataCache.reposByType[selectedTypeId]) {
       return;
     }
     let cancelled = false;
@@ -251,11 +205,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dataSource, selectedTypeId, apiBaseUrl, dataCache.reposByType]);
+  }, [selectedTypeId, apiBaseUrl, dataCache.reposByType]);
 
   // Backend: load items for selected repo.
   useEffect(() => {
-    if (dataSource !== 'backend' || !selectedRepoId || dataCache.itemsByRepo[selectedRepoId]) {
+    if (!selectedRepoId || dataCache.itemsByRepo[selectedRepoId]) {
       return;
     }
     let cancelled = false;
@@ -284,11 +238,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dataSource, selectedRepoId, apiBaseUrl, dataCache.itemsByRepo]);
+  }, [selectedRepoId, apiBaseUrl, dataCache.itemsByRepo]);
 
   // Backend: load versions for selected item.
   useEffect(() => {
-    if (dataSource !== 'backend' || !selectedItemId || dataCache.versionsByItemId[selectedItemId]) {
+    if (!selectedItemId || dataCache.versionsByItemId[selectedItemId]) {
       return;
     }
     let cancelled = false;
@@ -326,11 +280,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dataSource, selectedItemId, apiBaseUrl, dataCache.versionsByItemId]);
+  }, [selectedItemId, apiBaseUrl, dataCache.versionsByItemId]);
 
   // Backend: load files for selected version.
   useEffect(() => {
-    if (dataSource !== 'backend' || !selectedVersionId || dataCache.filesByVersionId[selectedVersionId]) {
+    if (!selectedVersionId || dataCache.filesByVersionId[selectedVersionId]) {
       return;
     }
     let cancelled = false;
@@ -359,11 +313,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dataSource, selectedVersionId, apiBaseUrl, dataCache.filesByVersionId]);
+  }, [selectedVersionId, apiBaseUrl, dataCache.filesByVersionId]);
 
   // Backend: load file detail when a file is selected.
   useEffect(() => {
-    if (dataSource !== 'backend' || !selectedFileId || dataCache.fileMeta[selectedFileId]) {
+    if (!selectedFileId || dataCache.fileMeta[selectedFileId]) {
       return;
     }
     let cancelled = false;
@@ -386,7 +340,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [dataSource, selectedFileId, apiBaseUrl, dataCache.fileMeta]);
+  }, [selectedFileId, apiBaseUrl, dataCache.fileMeta]);
 
   const repoTypeTiles: RepoType[] = dataCache.repoTypes.map((type) => ({
     id: type.id,
@@ -460,7 +414,7 @@ export default function App() {
         <RepositoryTypesPanel
           repoTypes={repoTypeTiles}
           selectedId={selectedTypeId}
-          loading={dataSource === 'backend' ? repoTypesLoading : false}
+          loading={repoTypesLoading}
           error={repoTypesError ?? undefined}
           emptyMessage="No repository types found."
         />
@@ -483,7 +437,7 @@ export default function App() {
     let repoContent: React.ReactNode = (
       <RepoInstancesPanel repos={repoTiles} selectedId={selectedRepoId} emptyMessage="No repositories found." />
     );
-    if (dataSource === 'backend' && reposLoading) {
+    if (reposLoading) {
       repoContent = <Alert severity="info">Loading repositories…</Alert>;
     } else if (reposError) {
       repoContent = <Alert severity="error">{reposError}</Alert>;
@@ -508,7 +462,7 @@ export default function App() {
             setSelectedVersionId(null);
             setSelectedFileId(null);
           }}
-          loadingMessage={dataSource === 'backend' && itemsLoading ? 'Loading items…' : undefined}
+          loadingMessage={itemsLoading ? 'Loading items…' : undefined}
           emptyMessage={itemsError ?? 'No items found.'}
         />
       ),
@@ -527,7 +481,7 @@ export default function App() {
           emptyMessage={versionsError ?? 'No versions found.'}
         />
       );
-      if (dataSource === 'backend' && versionsLoading) {
+      if (versionsLoading) {
         versionsContent = <Alert severity="info">Loading versions…</Alert>;
       }
 
@@ -547,7 +501,7 @@ export default function App() {
               files={versionFiles}
               selectedFileId={selectedFileId}
               onFileSelect={(row) => setSelectedFileId(row.id)}
-              filesLoading={dataSource === 'backend' ? filesLoading : false}
+              filesLoading={filesLoading}
               filesError={filesError ?? undefined}
               emptyFilesMessage={
                 selectedVersionId ? 'No files for this version.' : 'Select a version to view files.'
@@ -706,11 +660,9 @@ export default function App() {
           open={settingsOpen}
           density={density}
           themeMode={themeMode}
-          dataSource={dataSource}
           apiBaseUrl={apiBaseUrl}
           onDensityChange={setDensity}
           onThemeChange={setThemeMode}
-          onDataSourceChange={setDataSource}
           onClose={() => setSettingsOpen(false)}
         />
         <ToastQueue toasts={toasts} onDismiss={(id) => setToasts((current) => current.filter((toast) => toast.id !== id))} />
@@ -728,80 +680,6 @@ function emptyCache(): DataCache {
     versionsById: {},
     filesByVersionId: {},
     fileMeta: {},
-  };
-}
-
-function buildRepoData(repoType: SampleRepoType, repo: SampleRepo): BuiltRepoData {
-  const items: RepoItem[] = [];
-  const versionsByItemId: Record<string, RepoItemVersion[]> = {};
-  const versionsById: Record<string, RepoItemVersion> = {};
-  const filesByVersionId: Record<string, FileRow[]> = {};
-  const fileMeta: Record<string, FileDetail> = {};
-
-  for (const host of repo.hosts) {
-    for (const group of host.groups) {
-      for (const nameEntry of group.names) {
-        const itemId = `item:${repoType.type}:${repo.name}:${host.host}:${group.group}:${nameEntry.name}`;
-        const item: RepoItem = {
-          id: itemId,
-          label: `${group.group}/${nameEntry.name}`,
-          description: host.host,
-          path: [repo.display_name, host.host, group.group, nameEntry.name],
-        };
-        items.push(item);
-
-        const versionId = `${itemId}:latest`;
-        const versionLabel = nameEntry.last_updated
-          ? `Latest • ${new Date(nameEntry.last_updated).toLocaleDateString()}`
-          : 'Latest';
-        const version: RepoItemVersion = {
-          id: versionId,
-          itemId,
-          label: versionLabel,
-          description: `Updated ${nameEntry.last_updated ?? 'recently'}`,
-        };
-        versionsByItemId[itemId] = [version];
-        versionsById[versionId] = version;
-
-        const fileRows = nameEntry.files.map((file) => {
-          const row = transformFile(repoType, repo, nameEntry, file);
-          const detail = buildFileDetail(repoType, repo, nameEntry, file);
-          fileMeta[detail.id] = detail;
-          return row;
-        });
-        filesByVersionId[versionId] = fileRows;
-      }
-    }
-  }
-
-  return { items, versionsByItemId, versionsById, filesByVersionId, fileMeta };
-}
-
-function transformFile(repoType: SampleRepoType, repo: SampleRepo, nameEntry: SampleNameEntry, file: SampleFile): FileRow {
-  const id = `${repoType.type}:${repo.name}:${nameEntry.name}:${file.file}`;
-  return {
-    id,
-    name: file.file,
-    modified: file.modified,
-    sizeBytes: file.size_bytes,
-    path: file.path,
-  };
-}
-
-function buildFileDetail(repoType: SampleRepoType, repo: SampleRepo, nameEntry: SampleNameEntry, file: SampleFile): FileDetail {
-  const id = `${repoType.type}:${repo.name}:${nameEntry.name}:${file.file}`;
-  return {
-    id,
-    name: file.file,
-    path: file.path,
-    repoType: repoType.label,
-    repoName: repo.display_name,
-    sizeBytes: file.size_bytes,
-    modified: file.modified,
-    contentType: file.content_type,
-    checksum: file.checksums.sha256,
-    downloadCount: file.download_count,
-    lastAccessed: file.last_accessed,
   };
 }
 
@@ -828,7 +706,6 @@ type RouteSelection = {
 type StoredSettings = {
   themeMode?: 'light' | 'dark' | 'system';
   density?: 'comfortable' | 'compact';
-  dataSource?: 'simulated' | 'backend';
 };
 
 const SETTINGS_KEY = 'repoxy_ui_settings';
@@ -929,36 +806,6 @@ function pushRoute(route: RouteSelection, basePath: string) {
   if (window.location.pathname !== targetPath) {
     window.history.pushState({}, '', targetPath + window.location.search + window.location.hash);
   }
-}
-
-function buildSimulatedCache(): DataCache {
-  const cache = emptyCache();
-
-  for (const repoType of sampleData.repository_types) {
-    cache.repoTypes.push({
-      id: repoType.type,
-      label: repoType.label,
-      description: repoType.description,
-    });
-
-    cache.reposByType[repoType.type] = repoType.repos.map((repo) => ({
-      id: repo.name,
-      label: repo.display_name,
-      description: 'Routes requests through Repoxy for this repository.',
-      typeId: repoType.type,
-    }));
-
-    for (const repo of repoType.repos) {
-      const built = buildRepoData(repoType, repo);
-      cache.itemsByRepo[repo.name] = built.items;
-      cache.versionsByItemId = { ...cache.versionsByItemId, ...built.versionsByItemId };
-      cache.versionsById = { ...cache.versionsById, ...built.versionsById };
-      cache.filesByVersionId = { ...cache.filesByVersionId, ...built.filesByVersionId };
-      cache.fileMeta = { ...cache.fileMeta, ...built.fileMeta };
-    }
-  }
-
-  return cache;
 }
 
 function parseItemPath(id: string): string[] {
