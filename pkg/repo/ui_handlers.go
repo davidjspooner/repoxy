@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/davidjspooner/go-http-server/pkg/mux"
 )
 
@@ -17,9 +20,9 @@ func RegisterUIRoutes(m *mux.ServeMux) {
 	m.HandleFunc("GET /api/ui/v1/repository-types", handleListTypes)
 	m.HandleFunc("GET /api/ui/v1/repository-types/{typeId}/repositories", handleListRepositoriesForType)
 	m.HandleFunc("GET /api/ui/v1/repositories/{repoId}/items", handleListItems)
-	m.HandleFunc("GET /api/ui/v1/items/{itemId}/versions", handleListVersions)
-	m.HandleFunc("GET /api/ui/v1/versions/{versionId}/files", handleListFiles)
-	m.HandleFunc("GET /api/ui/v1/files/{fileId}", handleFileDetail)
+	m.HandleFunc("GET /api/ui/v1/items/{itemId...}/versions", handleListVersions)
+	m.HandleFunc("GET /api/ui/v1/versions/{versionId...}/files", handleListFiles)
+	m.HandleFunc("GET /api/ui/v1/files/{fileId...}", handleFileDetail)
 }
 
 type errorBody struct {
@@ -62,7 +65,7 @@ func handleListTypes(w http.ResponseWriter, r *http.Request) {
 				meta.Description = "Providers delivered from pull-through caches of registry.opentofu.org or private catalogs"
 			}
 		} else if meta.Label == "" {
-			meta.Label = strings.Title(td.typeName)
+			meta.Label = cases.Title(language.English).String(td.typeName)
 		}
 		typeBody.Types = append(typeBody.Types, meta)
 	}
@@ -337,37 +340,56 @@ func parseItemID(id string) (repoID, host, name string, err error) {
 }
 
 func parseVersionID(id string) (repoID, host, name, versionLabel string, err error) {
-	parts := strings.SplitN(id, ":", 3)
-	if len(parts) != 3 {
+	firstSplit := strings.SplitN(id, ":", 2)
+	if len(firstSplit) != 2 {
 		return "", "", "", "", fmt.Errorf("invalid version id")
 	}
-	repoID = parts[0]
-	hostName := parts[1]
+	repoID = firstSplit[0]
+	rest := firstSplit[1]
+	hostLabelSplit := strings.SplitN(rest, ":", 2)
+	if len(hostLabelSplit) != 2 {
+		return "", "", "", "", fmt.Errorf("invalid version id")
+	}
+	hostName := hostLabelSplit[0]
+	versionLabel = hostLabelSplit[1]
 	hostParts := strings.SplitN(hostName, "/", 2)
 	if len(hostParts) != 2 {
 		return "", "", "", "", fmt.Errorf("invalid version id")
 	}
 	host = hostParts[0]
 	name = hostParts[1]
-	versionLabel = parts[2]
 	return
 }
 
 func parseFileID(id string) (repoID, host, name, versionLabel, fileName string, err error) {
-	parts := strings.SplitN(id, ":", 4)
-	if len(parts) != 4 {
+	firstSplit := strings.SplitN(id, ":", 2)
+	if len(firstSplit) != 2 {
 		return "", "", "", "", "", fmt.Errorf("invalid file id")
 	}
-	repoID = parts[0]
-	hostName := parts[1]
+	repoID = firstSplit[0]
+	rest := firstSplit[1]
+
+	// fileName is after the last colon to allow colons inside version labels.
+	lastColon := strings.LastIndex(rest, ":")
+	if lastColon <= 0 || lastColon == len(rest)-1 {
+		return "", "", "", "", "", fmt.Errorf("invalid file id")
+	}
+	fileName = rest[lastColon+1:]
+	hostAndVersion := rest[:lastColon]
+
+	hostSplit := strings.SplitN(hostAndVersion, ":", 2)
+	if len(hostSplit) != 2 {
+		return "", "", "", "", "", fmt.Errorf("invalid file id")
+	}
+	hostName := hostSplit[0]
+	versionLabel = hostSplit[1]
+
 	hostParts := strings.SplitN(hostName, "/", 2)
 	if len(hostParts) != 2 {
 		return "", "", "", "", "", fmt.Errorf("invalid file id")
 	}
 	host = hostParts[0]
 	name = hostParts[1]
-	versionLabel = parts[2]
-	fileName = parts[3]
 	return
 }
 

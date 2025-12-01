@@ -4,8 +4,8 @@ server:
           address: 0.0.0.0
           url: https://wsl.home.dolbyn.com
           tls:
-              cert_file: /home/david/certs/live/wsl.home.dolbyn.com/fullchain.pem
-              key_file: /home/david/certs/live/wsl.home.dolbyn.com/privkey.pem
+              cert_file: /home/david/certs/live/home.dolbyn.com/fullchain.pem
+              key_file: /home/david/certs/live/home.dolbyn.com/privkey.pem
 
 storage:
     url: file:///home/david/current/20250518_repoxy/tmp/data

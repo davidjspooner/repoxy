@@ -13,7 +13,7 @@ import (
 
 // factory implements the repo.Type interface for container registries.
 type factory struct {
-	instances []*containerInstance
+	instances []*containerRegistryInstance
 }
 
 // init registers the Containers factory (with a legacy alias "container").
@@ -37,7 +37,7 @@ func (f *factory) NewRepository(ctx context.Context, common repo.CommonStorage, 
 	if common == nil {
 		return nil, errors.New("container type not initialized")
 	}
-	instance, err := NewContainerInstance(f, common, config)
+	instance, err := newContainerRegistryInstance(f, common, config)
 	if err != nil {
 		return nil, err
 	}
@@ -68,14 +68,14 @@ func (f *factory) Initialize(ctx context.Context, typeName string, mux *mux.Serv
 
 // lookupParam extracts the Container repository instance from the request path.
 // This is a placeholder implementation.
-func (f *factory) lookupParam(r *http.Request) (*containerInstance, *param) {
+func (f *factory) lookupParam(r *http.Request) (*containerRegistryInstance, *param) {
 	param := &param{
 		name:   r.PathValue("name"),
 		tag:    r.PathValue("tag"),
 		uuid:   r.PathValue("uuid"),
 		digest: r.PathValue("digest"),
 	}
-	var bestInstance *containerInstance
+	var bestInstance *containerRegistryInstance
 	var bestScore int
 	nameParts := strings.Split(param.name, "/")
 	for _, instance := range f.instances {

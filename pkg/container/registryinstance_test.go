@@ -23,7 +23,7 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-func newContainerInstanceForTest(t *testing.T, upstream string) *containerInstance {
+func newContainerInstanceForTest(t *testing.T, upstream string) *containerRegistryInstance {
 	cfg := &repo.Repo{
 		Name: "mirror",
 		Type: "container",
@@ -35,7 +35,7 @@ func newContainerInstanceForTest(t *testing.T, upstream string) *containerInstan
 	return newContainerInstanceFromConfig(t, cfg)
 }
 
-func newContainerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *containerInstance {
+func newContainerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *containerRegistryInstance {
 	t.Helper()
 	ctx := context.Background()
 	fsRO, err := storage.OpenFileSystemFromString(ctx, "mem://", storage.Config{})
@@ -62,7 +62,7 @@ func newContainerInstanceFromConfig(t *testing.T, cfg *repo.Repo) *containerInst
 	if err != nil {
 		t.Fatalf("new repo: %v", err)
 	}
-	containerInst, ok := inst.(*containerInstance)
+	containerInst, ok := inst.(*containerRegistryInstance)
 	if !ok {
 		t.Fatalf("instance type mismatch")
 	}
@@ -173,7 +173,7 @@ func TestContainerManifestAuthWithBearerCredentials(t *testing.T) {
 	}
 	inst := newContainerInstanceFromConfig(t, cfg)
 	tokenRequests := 0
-	inst.tokenHTTP = httpDoFunc(func(req *http.Request) (*http.Response, error) {
+	inst.tokenHTTP = client.Func(func(req *http.Request) (*http.Response, error) {
 		tokenRequests++
 		expected := "Basic " + base64.StdEncoding.EncodeToString([]byte("demo:secret"))
 		if got := req.Header.Get("Authorization"); got != expected {
@@ -340,6 +340,85 @@ func TestContainerBlobCaching(t *testing.T) {
 	}
 	if hits != 1 {
 		t.Fatalf("HEAD should be served from cache without upstream hit, got %d hits", hits)
+	}
+}
+
+func TestContainerManifestFallsBackToCacheOnUpstreamError(t *testing.T) {
+	t.Parallel()
+	inst := newContainerInstanceForTest(t, "https://registry.test")
+	manifest := []byte(`{"schemaVersion":2}`)
+	sum := sha256.Sum256(manifest)
+	digest := "sha256:" + hex.EncodeToString(sum[:])
+	hits := 0
+	inst.httpClientFactory = newContainerClientFactory(func(req *http.Request) (*http.Response, error) {
+		hits++
+		switch hits {
+		case 1:
+			resp := httpResponse(http.StatusOK, map[string]string{
+				"Docker-Content-Digest": digest,
+				"Content-Type":          "application/vnd.docker.distribution.manifest.v2+json",
+			}, manifest)
+			resp.Request = req
+			return resp, nil
+		default:
+			resp := httpResponse(http.StatusInternalServerError, nil, []byte("boom"))
+			resp.Request = req
+			return resp, nil
+		}
+	})
+	param := &param{name: "library/alpine", tag: "latest"}
+	req1 := httptest.NewRequest(http.MethodGet, "/v2/library/alpine/manifests/latest", nil)
+	rr1 := httptest.NewRecorder()
+	inst.HandleV2Manifest(param, rr1, req1)
+	if rr1.Code != http.StatusOK {
+		t.Fatalf("first request status = %d, want 200", rr1.Code)
+	}
+	if rr1.Body.String() != string(manifest) {
+		t.Fatalf("first request body = %s, want %s", rr1.Body.String(), string(manifest))
+	}
+	loc := repo.Locator{
+		Host:  inst.upstreamHost(),
+		Name:  "library/alpine",
+		Label: "latest",
+	}
+	resolved, err := inst.storage.ResolveLabel(context.Background(), loc)
+	if err != nil {
+		t.Fatalf("resolve label after cache: %v", err)
+	}
+	versions, err := inst.storage.ListVersions(context.Background(), repo.Locator{
+		Host: inst.upstreamHost(),
+		Name: "library/alpine",
+	})
+	if err != nil {
+		t.Fatalf("list versions: %v", err)
+	}
+	if len(versions) == 0 {
+		t.Fatalf("expected cached manifest version")
+	}
+	meta, err := inst.storage.GetVersionMeta(context.Background(), resolved)
+	if err != nil {
+		t.Fatalf("get version meta: %v", err)
+	}
+	if len(meta.Files) == 0 {
+		t.Fatalf("manifest meta missing files")
+	}
+	if _, err := inst.storage.OpenBlob(context.Background(), meta.Files[0].BlobKey); err != nil {
+		t.Fatalf("open cached manifest blob: %v", err)
+	}
+	req2 := httptest.NewRequest(http.MethodGet, "/v2/library/alpine/manifests/latest", nil)
+	rr2 := httptest.NewRecorder()
+	inst.HandleV2Manifest(param, rr2, req2)
+	if rr2.Code != http.StatusOK {
+		t.Fatalf("fallback status = %d, want 200", rr2.Code)
+	}
+	if rr2.Body.String() != string(manifest) {
+		t.Fatalf("fallback body = %s, want %s", rr2.Body.String(), string(manifest))
+	}
+	if rr2.Header().Get("Docker-Content-Digest") != digest {
+		t.Fatalf("fallback digest header = %s, want %s", rr2.Header().Get("Docker-Content-Digest"), digest)
+	}
+	if hits != 2 {
+		t.Fatalf("expected 2 upstream attempts, got %d", hits)
 	}
 }
 

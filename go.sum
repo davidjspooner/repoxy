@@ -15,8 +15,8 @@ github.com/davidjspooner/go-fs v0.0.0-20251109211441-893536cfb6f1 h1:RQlq5ZHixeK
 github.com/davidjspooner/go-fs v0.0.0-20251109211441-893536cfb6f1/go.mod h1:RksWwou322X8mvSDxvSooCYiAXqintv7UVyNxDGKwDY=
 github.com/davidjspooner/go-http-client v0.0.0-20250615171724-82c6219a0df7 h1:w0qJOB8NIMWncpK2nsDZZ5Fgk1hJzRKhWKxHTvxFpdw=
 github.com/davidjspooner/go-http-client v0.0.0-20250615171724-82c6219a0df7/go.mod h1:m/JFvF0oTlqpOqDtQgbilLA+zmCYa1xl97cnLczzlkk=
-github.com/davidjspooner/go-http-server v0.0.0-20250608225257-63e70b212779 h1:kOQTTfQDtH7kEcWSQTYM3Blui7pPtBN2NH3IkBT1RdI=
-github.com/davidjspooner/go-http-server v0.0.0-20250608225257-63e70b212779/go.mod h1:PB+8vU05QulnzGTUOZ9VLWDrhN3yC3iGLsoYQAlzsvI=
+github.com/davidjspooner/go-http-server v0.0.0-20251201011633-2b56da02417e h1:n2bumOKJdZMsw7cC57PmmCpR+dWfi9sAHoZeTGPnECU=
+github.com/davidjspooner/go-http-server v0.0.0-20251201011633-2b56da02417e/go.mod h1:kv5/inYCquRy11ekVF1Bzpza+IiD3m8wonlx5C3Ht6c=
 github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8 h1:ycfMXisrY8FFOOLzLbU+L2bLFdJDuVKLnI60N84H4YI=
 github.com/davidjspooner/go-resource-path v0.0.0-20250531073340-4f50db78c1d8/go.mod h1:k2wsTCgmup/Ai0d7c8hZYwQvxFaLQnbfCsRfyq3Vjzk=
 github.com/davidjspooner/go-text-cli v0.0.8 h1:yp/Wv7eXx4w/cw5wB3SAYGWA5Od7b0NvqVc+nFRtrRo=
@@ -32,6 +32,8 @@ github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsK
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=
 github.com/rogpeppe/go-internal v1.10.0/go.mod h1:UQnix2H7Ngw/k4C5ijL5+65zddjncjaFoBhdsK/akog=
+golang.org/x/text v0.31.0 h1:aC8ghyu4JhP8VojJ2lEHBnochRno1sgL6nEi9WGFGMM=
+golang.org/x/text v0.31.0/go.mod h1:tKRAlv61yKIjGGHX/4tP1LTbc13YSec1pxVEWXzfoeM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c/go.mod h1:JHkPIbrfpd72SG/EVd6muEfDQjcINNoR0C8j2r3qZ4Q=

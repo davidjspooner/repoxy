@@ -1,9 +1,14 @@
 package container
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -15,25 +20,25 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-// containerInstance implements the repo.Instance interface for Container repositories.
-type containerInstance struct {
+// containerRegistryInstance implements the repo.Instance interface for Container registries.
+type containerRegistryInstance struct {
 	factory           *factory
 	storage           repo.CommonStorage
 	config            repo.Repo
 	pipeline          client.MiddlewarePipeline
 	nameMatchers      repo.NameMatchers // Matchers for repository names
 	httpClientFactory func() client.Interface
-	tokenHTTP         httpDoer
+	tokenHTTP         client.Interface
 	auth              *containerUpstreamAuth
 }
 
-// NewContainerInstance creates a new Container repository instance.
+// newContainerRegistryInstance creates a new Container repository instance.
 // It initializes the instance with the factory and configuration, and sets up the authentication middleware.
-func NewContainerInstance(factory *factory, storage repo.CommonStorage, config *repo.Repo) (*containerInstance, error) {
+func newContainerRegistryInstance(factory *factory, storage repo.CommonStorage, config *repo.Repo) (*containerRegistryInstance, error) {
 	if storage == nil {
 		return nil, fmt.Errorf("docker instance missing storage")
 	}
-	instance := &containerInstance{
+	instance := &containerRegistryInstance{
 		factory: factory,
 		storage: storage,
 		config:  *config,
@@ -53,14 +58,14 @@ func NewContainerInstance(factory *factory, storage repo.CommonStorage, config *
 }
 
 // Ensure dockerInstance implements the repo.Instance , client.Authenticator, client.Cache interfaces.
-var _ repo.Instance = (*containerInstance)(nil)
-var _ client.Authenticator = (*containerInstance)(nil)
+var _ repo.Instance = (*containerRegistryInstance)(nil)
+var _ client.Authenticator = (*containerRegistryInstance)(nil)
 
-func (d *containerInstance) GetMatchWeight(name []string) int {
+func (d *containerRegistryInstance) GetMatchWeight(name []string) int {
 	return d.nameMatchers.GetMatchWeight(name)
 }
 
-func (d *containerInstance) Describe() repo.InstanceMeta {
+func (d *containerRegistryInstance) Describe() repo.InstanceMeta {
 	label := d.config.Name
 	if label == "" {
 		label = "containers"
@@ -79,7 +84,7 @@ func (d *containerInstance) Describe() repo.InstanceMeta {
 
 // HandledWriteMethodForReadOnlyRepo checks if the request is a write operation and returns a 405 if so.
 // Returns true if the request was handled (i.e., is not allowed), false otherwise.
-func (d *containerInstance) HandledWriteMethodForReadOnlyRepo(w http.ResponseWriter, r *http.Request) bool {
+func (d *containerRegistryInstance) HandledWriteMethodForReadOnlyRepo(w http.ResponseWriter, r *http.Request) bool {
 	switch r.Method {
 	case http.MethodGet, http.MethodHead:
 		return false // Read operations are allowed
@@ -91,7 +96,7 @@ func (d *containerInstance) HandledWriteMethodForReadOnlyRepo(w http.ResponseWri
 }
 
 // HandleV2Tags handles container V2 tags requests. Returns a 405 for write operations.
-func (d *containerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *http.Request) {
+func (d *containerRegistryInstance) HandleV2Tags(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -102,20 +107,43 @@ func (d *containerInstance) HandleV2Tags(param *param, w http.ResponseWriter, r 
 }
 
 // HandleV2Manifest handles container V2 manifest requests. Returns a 405 for write operations.
-func (d *containerInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r *http.Request) {
+func (d *containerRegistryInstance) HandleV2Manifest(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
-	err := d.proxyToUpstream(r.Context(), w, r)
+	ctx := r.Context()
+	resp, err := d.roundTripUpstream(ctx, r)
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
+	if err == nil && resp != nil && resp.StatusCode >= http.StatusOK && resp.StatusCode < 300 && resp.Body != nil && r.Method == http.MethodGet {
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr == nil {
+			d.cacheManifest(ctx, param, resp.Header.Get("Docker-Content-Digest"), resp.Header.Get("Content-Type"), body)
+			d.writeHeadersFromResponse(w, resp)
+			w.WriteHeader(resp.StatusCode)
+			_, _ = w.Write(body)
+			return
+		}
+		err = readErr
+	}
+	if d.serveCachedManifest(param, w, r) {
+		return
+	}
 	if err != nil {
-		slog.ErrorContext(r.Context(), "Failed to proxy request to upstream", "error", err)
+		slog.ErrorContext(ctx, "Failed to proxy manifest request to upstream", "error", err)
 		w.WriteHeader(http.StatusBadGateway)
 		return
+	}
+	d.writeHeadersFromResponse(w, resp)
+	w.WriteHeader(resp.StatusCode)
+	if resp.Body != nil && r.Method != http.MethodHead {
+		_, _ = io.Copy(w, resp.Body)
 	}
 }
 
 // HandleV2BlobUpload handles container V2 blob upload requests. Returns a 405 for write operations.
-func (d *containerInstance) HandleV2BlobUpload(param *param, w http.ResponseWriter, r *http.Request) {
+func (d *containerRegistryInstance) HandleV2BlobUpload(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -123,7 +151,7 @@ func (d *containerInstance) HandleV2BlobUpload(param *param, w http.ResponseWrit
 }
 
 // HandleV2BlobUID handles container V2 blob UID requests. Returns a 405 for write operations.
-func (d *containerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r *http.Request) {
+func (d *containerRegistryInstance) HandleV2BlobUID(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -131,7 +159,7 @@ func (d *containerInstance) HandleV2BlobUID(param *param, w http.ResponseWriter,
 }
 
 // HandleV2BlobByDigest handles container V2 blob digest requests. Returns a 405 for write operations.
-func (d *containerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWriter, r *http.Request) {
+func (d *containerRegistryInstance) HandleV2BlobByDigest(param *param, w http.ResponseWriter, r *http.Request) {
 	if d.HandledWriteMethodForReadOnlyRepo(w, r) {
 		return
 	}
@@ -147,7 +175,7 @@ func (d *containerInstance) HandleV2BlobByDigest(param *param, w http.ResponseWr
 	}
 }
 
-func (d *containerInstance) Authenticate(response *http.Response) string {
+func (d *containerRegistryInstance) Authenticate(response *http.Response) string {
 	if response == nil || d.auth == nil {
 		return ""
 	}
@@ -159,11 +187,11 @@ func (d *containerInstance) Authenticate(response *http.Response) string {
 	return header
 }
 
-func (d *containerInstance) Config() repo.Repo {
+func (d *containerRegistryInstance) Config() repo.Repo {
 	return d.config
 }
 
-func (d *containerInstance) proxyToUpstream(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (d *containerRegistryInstance) proxyToUpstream(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	resp, err := d.roundTripUpstream(ctx, r)
 	if err != nil {
 		return err
@@ -178,7 +206,7 @@ func (d *containerInstance) proxyToUpstream(ctx context.Context, w http.Response
 	return err
 }
 
-func (d *containerInstance) roundTripUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
+func (d *containerRegistryInstance) roundTripUpstream(ctx context.Context, r *http.Request) (*http.Response, error) {
 	u, err := url.Parse(d.config.Upstream.URL)
 	if err != nil {
 		return nil, err
@@ -212,7 +240,7 @@ func (d *containerInstance) roundTripUpstream(ctx context.Context, r *http.Reque
 	return resp, nil
 }
 
-func (d *containerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *http.Response) {
+func (d *containerRegistryInstance) writeHeadersFromResponse(w http.ResponseWriter, resp *http.Response) {
 	for key, values := range resp.Header {
 		for _, value := range values {
 			w.Header().Add(key, value)
@@ -220,7 +248,7 @@ func (d *containerInstance) writeHeadersFromResponse(w http.ResponseWriter, resp
 	}
 }
 
-func (d *containerInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
+func (d *containerRegistryInstance) serveLocalBlob(param *param, w http.ResponseWriter, r *http.Request) bool {
 	reader, err := d.storage.OpenBlob(r.Context(), param.digest)
 	if err != nil {
 		d.recordCacheMiss(observability.CacheBlobs)
@@ -245,7 +273,7 @@ func (d *containerInstance) serveLocalBlob(param *param, w http.ResponseWriter, 
 	return true
 }
 
-func (d *containerInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, r *http.Request) error {
+func (d *containerRegistryInstance) fetchAndStoreBlob(param *param, w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	resp, err := d.roundTripUpstream(ctx, r)
 	if err != nil {
@@ -279,7 +307,7 @@ func (d *containerInstance) fetchAndStoreBlob(param *param, w http.ResponseWrite
 	return nil
 }
 
-func (d *containerInstance) repoLabels() (string, string) {
+func (d *containerRegistryInstance) repoLabels() (string, string) {
 	repoType := d.config.Type
 	if repoType == "" {
 		repoType = "container"
@@ -291,27 +319,139 @@ func (d *containerInstance) repoLabels() (string, string) {
 	return repoType, repoName
 }
 
-func (d *containerInstance) recordCacheHit(cache string) {
+func (d *containerRegistryInstance) recordCacheHit(cache string) {
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheHit(repoType, repoName, cache)
 }
 
-func (d *containerInstance) recordCacheMiss(cache string) {
+func (d *containerRegistryInstance) recordCacheMiss(cache string) {
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheMiss(repoType, repoName, cache)
 }
 
-func (d *containerInstance) recordCacheError(cache string) {
+func (d *containerRegistryInstance) recordCacheError(cache string) {
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheError(repoType, repoName, cache)
 }
 
-func (d *containerInstance) recordCacheBytes(cache, action string, n int64) {
+func (d *containerRegistryInstance) recordCacheBytes(cache, action string, n int64) {
 	if n <= 0 {
 		return
 	}
 	repoType, repoName := d.repoLabels()
 	observability.RecordCacheBytes(repoType, repoName, cache, action, n)
+}
+
+func (d *containerRegistryInstance) cacheManifest(ctx context.Context, param *param, digest, mediaType string, body []byte) {
+	if d.storage == nil || param == nil || len(body) == 0 {
+		return
+	}
+	if digest == "" {
+		sum := sha256.Sum256(body)
+		digest = "sha256:" + hex.EncodeToString(sum[:])
+	}
+	if digest == "" {
+		return
+	}
+	if _, err := d.storage.PutBlob(ctx, digest, bytes.NewReader(body)); err != nil {
+		d.recordCacheError(observability.CacheManifests)
+		return
+	}
+	d.recordCacheBytes(observability.CacheManifests, "store", int64(len(body)))
+
+	loc := repo.Locator{
+		Host:      d.upstreamHost(),
+		Name:      param.name,
+		VersionID: digest,
+	}
+	meta := &repo.VersionMeta{
+		VersionID: digest,
+		Files: []repo.FileEntry{{
+			Name:      param.tag,
+			BlobKey:   digest,
+			Size:      int64(len(body)),
+			MediaType: mediaType,
+		}},
+	}
+	loc, err := d.storage.CreateVersion(ctx, loc, meta)
+	if err != nil && !errors.Is(err, fs.ErrExist) {
+		d.recordCacheError(observability.CacheManifests)
+		return
+	}
+	loc.VersionID = digest
+	loc.Label = param.tag
+	if err := d.storage.SetLabel(ctx, loc); err != nil {
+		d.recordCacheError(observability.CacheManifests)
+		return
+	}
+}
+
+func (d *containerRegistryInstance) serveCachedManifest(param *param, w http.ResponseWriter, r *http.Request) bool {
+	if d.storage == nil || param == nil || param.tag == "" || param.name == "" {
+		return false
+	}
+	ctx := r.Context()
+	loc := repo.Locator{
+		Host:  d.upstreamHost(),
+		Name:  param.name,
+		Label: param.tag,
+	}
+	loc, err := d.storage.ResolveLabel(ctx, loc)
+	if err != nil {
+		d.recordCacheMiss(observability.CacheManifests)
+		return false
+	}
+	meta, err := d.storage.GetVersionMeta(ctx, loc)
+	if err != nil || meta == nil || len(meta.Files) == 0 {
+		d.recordCacheError(observability.CacheManifests)
+		return false
+	}
+	file := meta.Files[0]
+	reader, err := d.storage.OpenBlob(ctx, file.BlobKey)
+	if err != nil {
+		d.recordCacheError(observability.CacheManifests)
+		return false
+	}
+	defer reader.Close()
+
+	contentLength := file.Size
+	if contentLength <= 0 {
+		if info, statErr := d.storage.StatBlob(ctx, file.BlobKey); statErr == nil {
+			contentLength = info.Size()
+		}
+	}
+	if contentLength > 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(contentLength, 10))
+	}
+	if file.MediaType != "" {
+		w.Header().Set("Content-Type", file.MediaType)
+	} else {
+		w.Header().Set("Content-Type", "application/octet-stream")
+	}
+	if file.BlobKey != "" {
+		w.Header().Set("Docker-Content-Digest", file.BlobKey)
+	}
+	w.WriteHeader(http.StatusOK)
+	if r.Method == http.MethodHead {
+		d.recordCacheHit(observability.CacheManifests)
+		return true
+	}
+	n, err := io.Copy(w, reader)
+	if err != nil {
+		d.recordCacheError(observability.CacheManifests)
+		return true
+	}
+	d.recordCacheBytes(observability.CacheManifests, "serve", n)
+	d.recordCacheHit(observability.CacheManifests)
+	return true
+}
+
+func (d *containerRegistryInstance) upstreamHost() string {
+	u, err := url.Parse(d.config.Upstream.URL)
+	if err != nil {
+		return ""
+	}
+	return u.Host
 }
 
 type writeCounter struct {

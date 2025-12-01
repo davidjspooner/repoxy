@@ -19,23 +19,12 @@ import (
 	"github.com/davidjspooner/repoxy/pkg/repo"
 )
 
-// httpDoer is the subset of http.Client we rely on so token fetches can be stubbed in tests.
-type httpDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-type httpDoFunc func(req *http.Request) (*http.Response, error)
-
-func (f httpDoFunc) Do(req *http.Request) (*http.Response, error) {
-	return f(req)
-}
-
 type containerUpstreamAuth struct {
 	bearer *bearerTokenSource
 	basic  basicCredentialSource
 }
 
-func newContainerUpstreamAuth(httpClient httpDoer, upstream repo.Upstream) (*containerUpstreamAuth, error) {
+func newContainerUpstreamAuth(httpClient client.Interface, upstream repo.Upstream) (*containerUpstreamAuth, error) {
 	auth := &containerUpstreamAuth{
 		bearer: newBearerTokenSource(httpClient, "", ""),
 	}
@@ -149,7 +138,7 @@ func parseBearerChallengeFallback(header string) *client.Challenge {
 }
 
 type bearerTokenSource struct {
-	client   httpDoer
+	client   client.Interface
 	username string
 	password string
 
@@ -162,7 +151,7 @@ type bearerToken struct {
 	expiresAt time.Time
 }
 
-func newBearerTokenSource(httpClient httpDoer, username, password string) *bearerTokenSource {
+func newBearerTokenSource(httpClient client.Interface, username, password string) *bearerTokenSource {
 	return &bearerTokenSource{
 		client:   httpClient,
 		username: username,

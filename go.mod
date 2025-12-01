@@ -8,8 +8,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.52.0
 	github.com/davidjspooner/go-fs v0.0.0-20251109211441-893536cfb6f1
 	github.com/davidjspooner/go-http-client v0.0.0-20250615171724-82c6219a0df7
-	github.com/davidjspooner/go-http-server v0.0.0-20250608225257-63e70b212779
+	github.com/davidjspooner/go-http-server v0.0.0-20251201011633-2b56da02417e
 	github.com/davidjspooner/go-text-cli v0.0.8
+	golang.org/x/text v0.31.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

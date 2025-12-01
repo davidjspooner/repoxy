@@ -10,9 +10,10 @@ import (
 
 // Cache label values used across repositories.
 const (
-	CacheRefs     = "refs"
-	CachePackages = "packages"
-	CacheBlobs    = "blobs"
+	CacheRefs      = "refs"
+	CachePackages  = "packages"
+	CacheBlobs     = "blobs"
+	CacheManifests = "manifests"
 )
 
 var (
